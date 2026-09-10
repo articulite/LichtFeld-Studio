@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later */
 
 #include "mrnf.hpp"
+#include "mrnf_research_seed.hpp"
 #include "core/alloc_counter.hpp"
 #include "core/assert.hpp"
 #include "core/camera.hpp"
@@ -21,9 +22,9 @@
 #include "training/dataset.hpp"
 #include <algorithm>
 #include <cassert>
-#include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cuda_runtime.h>
 #include <limits>
 #include <numeric>
@@ -48,6 +49,11 @@ namespace lfs::training {
         constexpr float MRNF_SH_C0 = 0.28209479177387814f;
         constexpr float MRNF_EXPLORE_SCORE_FLOOR = 0.05f;
         constexpr float MRNF_PROJECT_NEAR = 0.01f;
+
+        void validate_research_seed() {
+            const char* value = std::getenv("LFS_RESEARCH_SEED");
+            (void)mrnf_research_seed::parse(value);
+        }
 
         [[nodiscard]] lfs::core::Tensor squeeze_leading_ones(lfs::core::Tensor tensor) {
             while (tensor.is_valid() && tensor.ndim() > 1 && tensor.shape()[0] == 1) {
@@ -585,6 +591,8 @@ namespace lfs::training {
 
     void MRNF::initialize(const lfs::core::param::OptimizationParameters& optimParams) {
         using namespace lfs::core;
+
+        validate_research_seed();
 
         _strategy_required_peak_bytes = 0;
         _strategy_allocated_peak_bytes = 0;
@@ -1416,7 +1424,7 @@ namespace lfs::training {
         }
         LFS_GAUGE("model.gaussians.live_far_field", live_far);
 
-        enforce_max_cap();
+        enforce_max_cap(iter);
         apply_decay(iter);
         ensure_mean_step_far_mask();
 
@@ -1985,8 +1993,7 @@ namespace lfs::training {
         int n_grow = 0;
         lfs::core::Tensor above_threshold;
 
-        auto seed = static_cast<uint64_t>(
-            std::chrono::high_resolution_clock::now().time_since_epoch().count());
+        auto seed = mrnf_research_seed::next(std::getenv("LFS_RESEARCH_SEED"), static_cast<uint64_t>(iter) ^ 0x4d524e465f47524fULL);
 
         const auto edge_guidance = edge_guidance_factor();
 
@@ -2650,15 +2657,14 @@ namespace lfs::training {
         apply_frozen_ranges_to_optimizer(*_splat_data, *_optimizer);
     }
 
-    void MRNF::inject_noise(int /*iter*/) {
+    void MRNF::inject_noise(int iter) {
         const size_t n = static_cast<size_t>(_splat_data->size());
         if (n == 0)
             return;
 
         const float lr_mean = static_cast<float>(_optimizer->get_param_lr(ParamType::Means));
 
-        auto seed = static_cast<uint64_t>(
-            std::chrono::high_resolution_clock::now().time_since_epoch().count());
+        auto seed = mrnf_research_seed::next(std::getenv("LFS_RESEARCH_SEED"), static_cast<uint64_t>(iter) ^ 0x4d524e465f4e4f49ULL);
         const auto frozen_mask = make_frozen_mask(*_splat_data, n, _splat_data->means().device());
 
         mrnf_strategy::launch_mrnf_noise_injection(
@@ -2700,7 +2706,7 @@ namespace lfs::training {
             n);
     }
 
-    void MRNF::enforce_max_cap() {
+    void MRNF::enforce_max_cap(int iter) {
         if (_params->max_cap <= 0)
             return;
 
@@ -2718,8 +2724,7 @@ namespace lfs::training {
             opacities = opacities.squeeze(-1);
         opacities = apply_crop_damping_to_scores(*_optimizer, opacities);
 
-        auto seed = static_cast<uint64_t>(
-            std::chrono::high_resolution_clock::now().time_since_epoch().count());
+        auto seed = mrnf_research_seed::next(std::getenv("LFS_RESEARCH_SEED"), static_cast<uint64_t>(iter) ^ 0x4d524e465f434150ULL);
 
         auto keep_mask = Tensor::zeros_bool({n}, opacities.device());
         const auto frozen_mask = make_frozen_mask(*_splat_data, n, opacities.device());
@@ -3126,8 +3131,7 @@ namespace lfs::training {
             return;
         }
 
-        auto seed = static_cast<uint64_t>(
-            std::chrono::high_resolution_clock::now().time_since_epoch().count());
+        auto seed = mrnf_research_seed::next(std::getenv("LFS_RESEARCH_SEED"), static_cast<uint64_t>(iter) ^ 0x4d524e465f534545ULL);
         auto pixel_inds = Tensor::empty({static_cast<size_t>(n_seed)}, Device::CUDA, DataType::Int64);
         _gumbel_scratch.ensure_n(hw, Device::CUDA);
         mrnf_strategy::launch_gumbel_topk(

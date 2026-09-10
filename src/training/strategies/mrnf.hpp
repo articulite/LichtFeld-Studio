@@ -167,7 +167,7 @@ namespace lfs::training {
         void compute_bounds();
         void sync_mean_learning_rate();
         void ensure_densification_info_shape();
-        void enforce_max_cap();
+        void enforce_max_cap(int iter = 0);
         void refresh_decay_schedule_from_current_state();
         [[nodiscard]] bool should_accumulate_view_sample(int iter) const;
         [[nodiscard]] bool should_accumulate_explore_sample(int iter) const;
