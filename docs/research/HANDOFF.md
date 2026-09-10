@@ -36,3 +36,12 @@ Windows RTX5060 laptop8GB,MSVC14.44,CUDA12.8,SM120. Original73 cached vcpkg ABIs
 
 17 Python tests and standalone C++ seed test passed; full GPU test suite not run. Default MRNF clock seeds preserved absent LFS_RESEARCH_SEED. Existing tensor/camera seeds unchanged. Seeded choices are not a claim of bitwise GPU determinism.
 
+## Context and build-monitoring efficiency
+- Start from this handoff and compact result JSON; read older research history only for a specific unresolved question.
+- Run approved, bounded experiment batches sequentially with one GPU job at a time. Review one compact table per batch: exit status, quality checkpoints, Gaussian count, elapsed time, memory and decision.
+- Redirect full build/training output to files. Prefer completion waits; avoid repeated log reads while a process is healthy. Read a short log tail on failure or suspected stall, and expand only around a specific error. Keep required user updates brief without rereading logs just to produce an update.
+- Automatically extract metrics and sanity checks. Inspect raw logs only when validation fails or a result needs explanation; never repeatedly dump successful logs or full manifests into context.
+- Freeze executable and evaluator across JSON-only experiments. Rebuild incrementally only for implementation changes; do not refresh version stamps or rebuild for documentation changes. Batch a few justified optional behaviors into one build, preserving MRNF defaults, then vary one behavior at a time.
+- Delegate only concrete independent implementation/review work, with concise findings and file references. Avoid agents for routine polling.
+- Update the handoff at meaningful checkpoints with completed run IDs, decision, blockers and exact next command. Keep it current instead of appending contradictory status histories.
+- Short runs establish growth/convergence relationships, not final quality. Use multiple checkpoints, repeated seeds and longer matched-time comparisons before promotion; do not trade evidence integrity for token savings.
