@@ -2024,24 +2024,40 @@ namespace lfs::training {
         LFS_CUDA_CHECK_MSG(
             cudaMemcpy(host_counts, _refine_counts_dev.ptr<int64_t>(),
                        4 * sizeof(int64_t), cudaMemcpyDeviceToHost),
-            "MRNF grow packed counts D2H");
+            "KGS grow packed counts D2H");
+        // KGS Splat3-Inspired Adaptive Density Controller:
+        // 1. Rapid early ramp: When starved (current_active < min_structural_floor),
+        //    boost growth fraction up to 5x so sparse point clouds establish geometry quickly.
+        // 2. Growth phase pacing: Ensure growth is distributed smoothly throughout the active
+        //    growth window (up to effective_grow_until_iter()) so the budget is not prematurely
+        //    exhausted early in training.
+        const float base_grow_fraction = _params->grow_fraction;
+        float effective_grow_fraction = base_grow_fraction;
+
+        const int grow_until = effective_grow_until_iter();
+        const float cap = (_params->max_cap > 0) ? static_cast<float>(_params->max_cap) : 100000.0f;
+        const float min_structural_floor = std::min(cap * 0.4f, 25000.0f);
+
+        if (current_active < static_cast<size_t>(min_structural_floor)) {
+            const float deficit = 1.0f - static_cast<float>(current_active) / min_structural_floor;
+            const float ramp_mult = 1.0f + 3.5f * (deficit * deficit);
+            effective_grow_fraction = std::min(0.35f, base_grow_fraction * ramp_mult);
+        }
+
         int desired_total = static_cast<int>(
-            std::round(static_cast<float>(host_counts[0]) * _params->grow_fraction));
+            std::round(static_cast<float>(host_counts[0]) * effective_grow_fraction));
         const int candidate_count = static_cast<int>(host_counts[0]);
 
-        int pacing_windows_left = 0;
-        if (cfg_fill_target_iter() > 0 && _params->max_cap > 0) {
+        // Pace remaining growth across the remaining growth windows so we reach cap near grow_until
+        if (iter < grow_until && cap > 0.0f && current_active >= static_cast<size_t>(min_structural_floor)) {
             const int refine_every = std::max(1, static_cast<int>(_params->refine_every));
-            pacing_windows_left = std::max(1, (cfg_fill_target_iter() - iter) / refine_every);
+            const int windows_left = std::max(1, (grow_until - iter) / refine_every);
             const long long remaining = std::max<long long>(
-                0,
-                static_cast<long long>(_params->max_cap) - static_cast<long long>(current_active));
-            const long long paced =
-                (remaining + static_cast<long long>(pacing_windows_left) - 1) /
-                static_cast<long long>(pacing_windows_left); // ceil(remaining / windows_left)
-
-            if (desired_total > 0 && paced < static_cast<long long>(desired_total)) {
-                desired_total = static_cast<int>(std::min<long long>(paced, INT_MAX));
+                0, static_cast<long long>(cap) - static_cast<long long>(current_active));
+            // Allow headroom per window so growth can respond to scene demand without slamming cap early
+            const long long paced_max = (remaining * 2 + windows_left - 1) / windows_left;
+            if (desired_total > 0 && paced_max < desired_total) {
+                desired_total = static_cast<int>(std::max<long long>(1, paced_max));
             }
         }
         const int selectable_replace = static_cast<int>(host_counts[2]);
@@ -2199,10 +2215,9 @@ namespace lfs::training {
             LOG_INFO("MRNF ratio-rank iter={} candidates={} grow={}",
                      iter, candidate_count, grow_sampled);
         }
-        if (cfg_fill_target_iter() > 0 &&
-            (_growth_window_count % MRNF_RATIO_RANK_LOG_INTERVAL) == 1) {
-            LOG_INFO("MRNF pacing iter={} active={} desired={} windows_left={}",
-                     iter, current_active, desired_total, pacing_windows_left);
+        if ((_growth_window_count % MRNF_RATIO_RANK_LOG_INTERVAL) == 1) {
+            LOG_INFO("KGS growth iter={} active={} desired={}",
+                     iter, current_active, desired_total);
         }
         Tensor explore_inds;
         if (iter < effective_grow_until_iter() && background_improvements_enabled() &&

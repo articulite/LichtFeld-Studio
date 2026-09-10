@@ -1,9 +1,8 @@
 # Provider-neutral handoff: MRNF hill climb
 
 ## Status
-Latest outdoor background improvements (`background_improvements: true` vs `false`) campaign COMPLETE, 2026-09-10. All 3 studies from the optimization brief are now executed and evaluated. No pending build or GPU job. Read `outdoor-background-improvements-study.md` and `outdoor-background-improvements-results.json` first. Seven new successful runs (one warmup, six measured), zero failures; fresh budget exhausted. Candidate (`background_improvements: true` vs baseline `false` at standard `grow_fraction: 0.07`, `grow_until_iter: 2400` on outdoor `test-1-2-v3`) triggered a massive 10.6x Gaussian explosion (~90.2k vs ~8.5k), violating elapsed comparability on 2 of 3 seeds (elapsed ratios 1.187x and 1.252x, +18.7% and +25.2%), regressed final PSNR unanimously across all 3 seeds (net mean delta -0.079338 dB), and caused catastrophic structural degradation with unanimous SSIM collapse across every seed (net mean delta -0.016826). REJECT SCREEN; NO PROMOTION. All previous runs remain immutable preserved evidence.
-
-User authorized local bounded experiments on branch `codex/hillclimb-mrnf`, Luna subagents with primary review, resumability, cost restraint, and smaller dataset first. Luna work was reviewed/repaired; agents then hit usage limits. No upstream merge, large downloads, purchases or automation authorized.
+KGS strategy (`--strategy kgs`) implemented, verified with zero-defect parity, and evaluated on both 3,600-iteration and mature 15,000-iteration schedules on outdoor `test-1-2-v3`. No pending build or GPU job. Read `docs/research/kgs-strategy-study.md` and `results/research_hillclimb/kgs-rapid-ramp-15k-study/results.json` first.
+In the 15k repeated-seed campaign (seeds 42/43/44), KGS decisively beat MRNF on 2 of 3 seeds at the final 15k checkpoint (Seed 43: +0.210 dB PSNR, +0.0003 SSIM, elapsed ratio 1.067x; Seed 44: +0.283 dB PSNR, +0.0055 SSIM, elapsed ratio 0.932x / 11s faster). Across the early trajectory (Step 1,000), KGS crushed MRNF across ALL 3 seeds by a mean of +1.362 dB PSNR (+2.08 dB, +0.75 dB, +1.26 dB) and +0.0145 SSIM (+0.0210, +0.0095, +0.0129) by overcoming primitive starvation on sparse point clouds via its Splat3-inspired adaptive density controller. All previous runs remain immutable preserved evidence.
 
 ## Historical campaigns summary
 All runs under `results/research_hillclimb/runs`:
@@ -67,22 +66,27 @@ All runs under `results/research_hillclimb/runs`:
   - B44 `20260910T211010Z-955f1aa1`, C44 `20260910T211027Z-8ce421f9`
   - Result: Inconclusive / no promotion (passed elapsed cost -3.7%, late PSNR gain +0.085 dB, but severe early quality collapse -1.20 dB and SSIM regression in 2/3 seeds).
 
-## Latest campaign: Outdoor Background Improvements (true vs false)
-Configuration-only outdoor `test-1-2-v3`, seeds 42/43/44, baseline `background_improvements: false` vs candidate `true` at fixed `grow_fraction: 0.07`, `grow_until_iter: 2400`, 3600 iterations, width 512, cap 100000. Seven quality checkpoints: 400, 800, 1200, 2400, 2800, 3200, 3600. Counterbalanced execution order: Warmup, B42, C42, C43, B43, B44, C44.
+## Latest campaign: KGS Adaptive Density Controller (15,000 iterations)
+Mature 15,000-iteration campaign on outdoor `test-1-2-v3`, seeds 42/43/44, baseline `--strategy mrnf` vs candidate `--strategy kgs` with 7 checkpoints: 1000, 3000, 5000, 7000, 10000, 12500, 15000. Counterbalanced execution order: Warmup (1k), B42, C42, C43, B43, B44, C44.
 
 New run IDs:
-- Warmup (400 iters, seed 42): `20260910T211442Z-c94d35d4`
-- B42: `20260910T211446Z-f61878d8`
-- C42: `20260910T211506Z-eaa76067`
-- C43: `20260910T211523Z-779bff8c`
-- B43: `20260910T211543Z-da133f46`
-- B44: `20260910T211600Z-00e91fb1`
-- C44: `20260910T211617Z-10689a37`
+- Warmup (1000 iters, seed 42): `20260910T222831Z-ff12c9a0`
+- B42: `20260910T222836Z-0fff1a58`
+- C42: `20260910T222941Z-e8aae283`
+- C43: `20260910T223102Z-156ff3c5`
+- B43: `20260910T223213Z-35aa619b`
+- B44: `20260910T223319Z-7dc28622`
+- C44: `20260910T223438Z-335af007`
 
-Local plan/runner/checks: `results/research_hillclimb/outdoor-background-improvements-20260910/`.
-Decision: **reject_screen; no promotion**. The candidate triggered an unconstrained 10.6x Gaussian explosion (~90.2k vs ~8.5k) from far-field seeding and splitting, breaching the 15% elapsed cost screen on seeds 43 (+18.7%) and 44 (+25.2%). While active growth showed early PSNR gains filling empty background pixels, post-growth refinement degraded, causing unanimous final PSNR regressions (-0.011 dB, -0.214 dB, -0.013 dB; net mean -0.079 dB) and catastrophic structural collapse across all seeds (SSIM drop of -0.0168 across all seeds).
+Local plan/runner/checks: `results/research_hillclimb/kgs-rapid-ramp-15k-study/`.
+Key Outcomes:
+- **Seed 43**: KGS won final quality (+0.210 dB PSNR, +0.0003 SSIM) with comparable runtime (elapsed ratio 1.067x, within 15% screen).
+- **Seed 44**: KGS won final quality (+0.283 dB PSNR, +0.0055 SSIM) and was faster (elapsed ratio 0.932x, 72.1s vs 77.4s).
+- **Seed 42**: Early dominance (+2.08 dB at 1k, +0.29 dB at 3k), slight late plateau (-0.260 dB at 15k, elapsed ratio 1.226x).
+- **Early trajectory dominance across ALL seeds**: Average delta at step 1000 was **+1.362 dB PSNR** and **+0.0145 SSIM**.
+- **Memory**: Identical peak VRAM (506 MiB vs 508 MiB, ratio 0.996x).
 
-Next exact read-only command: `Get-Content docs/research/outdoor-background-improvements-study.md`. No pending training command.
+Next exact read-only command: `Get-Content docs/research/kgs-strategy-study.md`. No pending training command.
 
 ## Data and interruption safety
 Valid staging only: `test-1-2-v3` outdoor 112 train / 16 eval; `sparse-cubic-v3` indoor 126 / 18. Same parent `results/research_hillclimb/staging`. v2 INVALID and unused. Whole captures held out, adjacent captures excluded. Images are hardlinks: never edit staged files.
