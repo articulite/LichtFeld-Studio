@@ -104,6 +104,7 @@ namespace lfs::core {
         inline constexpr std::string_view kStrategyMNRFLegacy = "mnrf";
         inline constexpr std::string_view kStrategyLFSLegacy = "lfs";
         inline constexpr std::string_view kStrategyIGSPlus = "igs+";
+        inline constexpr std::string_view kStrategyKGS = "kgs";
 
         [[nodiscard]] inline std::filesystem::path default_dataset_output_path(
             const std::filesystem::path& dataset_path) {
@@ -125,6 +126,8 @@ namespace lfs::core {
                 return kStrategyMRNF;
             if (strategy == kStrategyIGSPlus)
                 return kStrategyIGSPlus;
+            if (strategy == kStrategyKGS)
+                return kStrategyKGS;
             return {};
         }
 
@@ -132,8 +135,13 @@ namespace lfs::core {
             return !canonical_strategy_name(strategy).empty();
         }
 
+        [[nodiscard]] inline constexpr bool is_kgs_strategy(const std::string_view strategy) noexcept {
+            return canonical_strategy_name(strategy) == kStrategyKGS;
+        }
+
         [[nodiscard]] inline constexpr bool is_mrnf_strategy(const std::string_view strategy) noexcept {
-            return canonical_strategy_name(strategy) == kStrategyMRNF;
+            const auto canonical = canonical_strategy_name(strategy);
+            return canonical == kStrategyMRNF || canonical == kStrategyKGS;
         }
 
         [[nodiscard]] inline constexpr bool strategy_names_match(
@@ -315,6 +323,7 @@ namespace lfs::core {
             static OptimizationParameters mcmc_defaults();
             static OptimizationParameters mrnf_defaults();
             static OptimizationParameters igs_plus_defaults();
+            static OptimizationParameters kgs_defaults();
             static OptimizationParameters defaults_for_strategy(std::string_view strategy);
         };
 

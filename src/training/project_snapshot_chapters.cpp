@@ -82,7 +82,9 @@ namespace lfs::training {
                     checkpoint_params.optimization;
             } else if (
                 parameters.active_strategy ==
-                lfs::core::param::kStrategyMRNF) {
+                    lfs::core::param::kStrategyMRNF ||
+                parameters.active_strategy ==
+                    lfs::core::param::kStrategyKGS) {
                 parameters.mrnf_session =
                     checkpoint_params.optimization;
                 parameters.mrnf_current =

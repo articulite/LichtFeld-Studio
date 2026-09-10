@@ -177,7 +177,7 @@ namespace {
         Help
     };
 
-    const std::set<std::string> VALID_STRATEGIES = {"mcmc", "mrnf", "mnrf", "lfs", "igs+"};
+    const std::set<std::string> VALID_STRATEGIES = {"mcmc", "mrnf", "mnrf", "lfs", "igs+", "kgs"};
 
     std::optional<lfs::core::param::BackgroundMode> parse_bg_mode(const std::string& mode) {
         using lfs::core::param::BackgroundMode;
@@ -1059,7 +1059,7 @@ namespace {
                 const auto strat = ::args::get(strategy);
                 if (VALID_STRATEGIES.find(strat) == VALID_STRATEGIES.end()) {
                     return std::unexpected(std::format(
-                        "ERROR: Invalid optimization strategy '{}'. Valid strategies are: mcmc, mrnf, igs+ (legacy aliases: mnrf, lfs)",
+                        "ERROR: Invalid optimization strategy '{}'. Valid strategies are: mcmc, mrnf, igs+, kgs (legacy aliases: mnrf, lfs)",
                         strat));
                 }
 
@@ -1665,7 +1665,9 @@ lfs::core::args::parse_args_and_params(int argc, const char* const argv[]) {
             return std::unexpected("--strategy conflicts with config file");
         }
     } else {
-        if (lfs::core::param::is_mrnf_strategy(strategy))
+        if (strategy == "kgs")
+            params->optimization = lfs::core::param::OptimizationParameters::kgs_defaults();
+        else if (lfs::core::param::is_mrnf_strategy(strategy))
             params->optimization = lfs::core::param::OptimizationParameters::mrnf_defaults();
         else if (strategy == "igs+")
             params->optimization = lfs::core::param::OptimizationParameters::igs_plus_defaults();
