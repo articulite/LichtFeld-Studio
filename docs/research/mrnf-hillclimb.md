@@ -40,3 +40,32 @@ Read this log, git status, and scripts/research_hillclimb documentation. Inspect
 - Current build command: .git/hillclimb/build-research.cmd, log .git/hillclimb/build-restored.log. Builds original prefix with four jobs. Inspect active process before continuing. No training job started.
 - Prepared baseline specs: results/research_hillclimb/specs/profile-indoor/experiment.json and profile-outdoor/experiment.json. Each has 1200 iterations, max width512, Gaussian cap100000, refinement100, stop1101, grow-until800, seed42, 300-second total limit and sampled VRAM cutoff7000 MiB. These are screening/profile runs only, not target baselines.
 - Next: finish build and source/binary stamp verification, run indoor baseline profile through harness, calibrate bounded remaining budget, run outdoor baseline, then one effective candidate if gates pass. Never run profile specs against old executable claiming seeded behavior.
+
+## Measured checkpoint — 2026-09-10 11:46 PDT (supersedes pending notes above)
+
+Initial bounded cycle COMPLETE: two baselines and two candidates, zero failed GPU runs. User requested smaller outdoor set first; this order was followed. Final build exited0 (.git/hillclimb/build-final.log), embedded commit a6c19643 matches evaluated source; executable/DLL/source hashes frozen in each run and .git/hillclimb/built-provenance.json. Audit dirty flag refers to untracked HANDOFF.md only. Documentation added after freezing does not warrant recompilation. Version-stamp refresh unnecessarily recompiled py_ui.cpp for about17 CPU minutes; avoid repeating this for documentation.
+
+Candidate changes only grow_fraction .07 -> .14; all other config, split, evaluator, seeds and executable identical. Budget fixed at four successful screening runs, now exhausted. All runs used seed42,1200 iterations,width512,100000 cap,300second timeout and7000MiB sampled ceiling. These small scenes were well below6GiB; this does not test near-budget behavior.
+
+| Scene/treatment | PSNR | SSIM | Gaussians | Harness seconds | Internal perf seconds | Sample peak MiB | CUDA peak MiB |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Outdoor MRNF |11.677371|.378334|3125|27.360|6.452|445|1459.6|
+| Outdoor grow .14 |12.248983|.385140|4864|4.547|3.960|455|1459.6|
+| Indoor MRNF |26.129745|.801747|20970|5.250|4.503|469|1463.6|
+| Indoor grow .14 |26.625055|.807925|32662|5.218|4.690|457|1461.6|
+
+Exact state/summary values, hashes, and observed split/prune iterations are committed in initial-screen-results.json. Harness wall time includes startup/evaluation; internal perf is a different scope. Outdoor first process had large startup overhead (possible cache/initialization effect, not isolated). No speedup claim. Indoor internal time rose4.15%; sampled/in-process memory stayed similar. Whole-device nvidia-smi samples and CUDA accounting disagree on this Windows machine; retain both, do not claim445MiB is the true peak. Sampling is a lower bound, not a guarantee. LPIPS null in all runs because cached weights absent; no download performed.
+
+Run directories under results/research_hillclimb/runs:
+- Outdoor baseline: 20260910T184132Z-d0eb9803
+- Indoor baseline: 20260910T184239Z-91cb6818
+- Outdoor candidate: 20260910T184307Z-0ec35d21
+- Indoor candidate: 20260910T184321Z-100bcfc7
+
+Every train/evaluate exit was0, final iteration1200, exact heldout names/counts verified. Both candidates and baselines exercised actual splitting and soft pruning; observed topology changes stop before1101 and training continues to1200. Existing defaults remain unchanged without opt-in research seed. Seed does not promise bitwise GPU determinism or complete checkpoint RNG continuation.
+
+Visual inspection: each run's eval_step_1200/0.png contains GT/render comparison. Outdoor candidate makes car/vegetation structure more visible, but both outdoor renders are severely blurred/underfit. Indoor candidate shows slightly clearer curtain/table edges; fine texture remains missing. One inspected image per treatment is diagnostic, not a perceptual validation study.
+
+Decision: RETAIN FOR REPEATED-SEED SCREENING ONLY; NO PROMOTION. PSNR gains +.571612 outdoor,+.495310 indoor and SSIM gains +.006806,+.006178 are one-seed screening observations. Automated decision at results/research_hillclimb/decision-grow14.json verifies paired invariants; manual timing caveat above limits its interpretation. No measured variability tolerance, target-settings confirmation, independent test scene or validated floater reduction exists.
+
+Next most informative experiment: warm runtime first, repeat both treatments on both scenes at seeds42/43/44 in alternating order with a newly declared bounded budget. Calibrate baseline variability and use internal training/perf time alongside total time. If gains survive, increase shared iterations/resolution and compare at matched elapsed-time and memory budgets. Outdoor underfitting and tiny initial point count require checking convergence before attributing the gain to a generally better strategy. Do not expand this completed pass automatically.

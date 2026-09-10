@@ -1,0 +1,242 @@
+{
+  "decision": "retain_for_repeated_seed_screening",
+  "promotion": false,
+  "source_commit": "a6c19643",
+  "executable": [
+    {
+      "bytes": 99979264,
+      "path": "LichtFeld-Studio.exe",
+      "sha256": "95954f5d825c123594712b85e0fb8fb53febb3e8038a264713fde08bffe2c915"
+    }
+  ],
+  "runs": [
+    {
+      "run": "20260910T184132Z-d0eb9803",
+      "kind": "baseline",
+      "dataset": "test-1-2-v3",
+      "summary": {
+        "iteration": 1200,
+        "psnr": 11.677371,
+        "ssim": 0.378334,
+        "lpips": null,
+        "time_per_image": 0.048764,
+        "num_gaussians": 3125,
+        "elapsed_seconds": 27.265999999945052,
+        "vram": {
+          "measurement": "sampled peak from nvidia-smi; unavailable means no valid sample",
+          "sample_count": 89,
+          "sampled_peak_mib": 445,
+          "valid_sample_count": 89
+        },
+        "perf_wall_seconds": 6.451521,
+        "perf_peak_cuda_used_bytes": 1530462208,
+        "metrics_rows": 1
+      },
+      "state": {
+        "elapsed_seconds": 27.35999999998603,
+        "eval_exit": 0,
+        "status": "complete",
+        "train_exit": 0,
+        "vram": {
+          "measurement": "sampled peak from nvidia-smi; unavailable means no valid sample",
+          "sample_count": 90,
+          "sampled_peak_mib": 445,
+          "valid_sample_count": 90
+        }
+      },
+      "split_iterations": [
+        100,
+        200,
+        300,
+        400,
+        500,
+        600,
+        700,
+        900
+      ],
+      "prune_iterations": [
+        900
+      ],
+      "manifest_sha256": "232b8ef4839f8f75feac60342c34c1c8d3a4c0ec85bd3de8091dace92791b45c"
+    },
+    {
+      "run": "20260910T184239Z-91cb6818",
+      "kind": "baseline",
+      "dataset": "sparse-cubic-v3",
+      "summary": {
+        "iteration": 1200,
+        "psnr": 26.129745,
+        "ssim": 0.801747,
+        "lpips": null,
+        "time_per_image": 0.046717,
+        "num_gaussians": 20970,
+        "elapsed_seconds": 5.14000000001397,
+        "vram": {
+          "measurement": "sampled peak from nvidia-smi; unavailable means no valid sample",
+          "sample_count": 17,
+          "sampled_peak_mib": 469,
+          "valid_sample_count": 17
+        },
+        "perf_wall_seconds": 4.502866,
+        "perf_peak_cuda_used_bytes": 1534656512,
+        "metrics_rows": 1
+      },
+      "state": {
+        "elapsed_seconds": 5.25,
+        "eval_exit": 0,
+        "status": "complete",
+        "train_exit": 0,
+        "vram": {
+          "measurement": "sampled peak from nvidia-smi; unavailable means no valid sample",
+          "sample_count": 17,
+          "sampled_peak_mib": 469,
+          "valid_sample_count": 17
+        }
+      },
+      "split_iterations": [
+        100,
+        200,
+        300,
+        400,
+        500,
+        600,
+        700,
+        800,
+        900,
+        1000,
+        1100
+      ],
+      "prune_iterations": [
+        700,
+        800,
+        900,
+        1000,
+        1100
+      ],
+      "manifest_sha256": "474b113e0ce82e5eed652347396bcb5b9741bb313e9d844cfb3228a2842bb647"
+    },
+    {
+      "run": "20260910T184307Z-0ec35d21",
+      "kind": "candidate",
+      "dataset": "test-1-2-v3",
+      "summary": {
+        "iteration": 1200,
+        "psnr": 12.248983,
+        "ssim": 0.38514,
+        "lpips": null,
+        "time_per_image": 0.047556,
+        "num_gaussians": 4864,
+        "elapsed_seconds": 4.437000000034459,
+        "vram": {
+          "measurement": "sampled peak from nvidia-smi; unavailable means no valid sample",
+          "sample_count": 15,
+          "sampled_peak_mib": 455,
+          "valid_sample_count": 15
+        },
+        "perf_wall_seconds": 3.959557,
+        "perf_peak_cuda_used_bytes": 1530462208,
+        "metrics_rows": 1
+      },
+      "state": {
+        "elapsed_seconds": 4.547000000020489,
+        "eval_exit": 0,
+        "status": "complete",
+        "train_exit": 0,
+        "vram": {
+          "measurement": "sampled peak from nvidia-smi; unavailable means no valid sample",
+          "sample_count": 15,
+          "sampled_peak_mib": 455,
+          "valid_sample_count": 15
+        }
+      },
+      "split_iterations": [
+        100,
+        200,
+        300,
+        400,
+        500,
+        600,
+        700,
+        800,
+        900,
+        1000,
+        1100
+      ],
+      "prune_iterations": [
+        500,
+        600,
+        700,
+        800,
+        900,
+        1000,
+        1100
+      ],
+      "manifest_sha256": "8377436b281403435242c8fbd98f29feb26159a72cbc3ca0605dd96052904153"
+    },
+    {
+      "run": "20260910T184321Z-100bcfc7",
+      "kind": "candidate",
+      "dataset": "sparse-cubic-v3",
+      "summary": {
+        "iteration": 1200,
+        "psnr": 26.625055,
+        "ssim": 0.807925,
+        "lpips": null,
+        "time_per_image": 0.049043,
+        "num_gaussians": 32662,
+        "elapsed_seconds": 5.125,
+        "vram": {
+          "measurement": "sampled peak from nvidia-smi; unavailable means no valid sample",
+          "sample_count": 17,
+          "sampled_peak_mib": 457,
+          "valid_sample_count": 17
+        },
+        "perf_wall_seconds": 4.689724,
+        "perf_peak_cuda_used_bytes": 1532559360,
+        "metrics_rows": 1
+      },
+      "state": {
+        "elapsed_seconds": 5.217999999993481,
+        "eval_exit": 0,
+        "status": "complete",
+        "train_exit": 0,
+        "vram": {
+          "measurement": "sampled peak from nvidia-smi; unavailable means no valid sample",
+          "sample_count": 17,
+          "sampled_peak_mib": 457,
+          "valid_sample_count": 17
+        }
+      },
+      "split_iterations": [
+        100,
+        200,
+        300,
+        400,
+        500,
+        600,
+        700,
+        800,
+        900,
+        1000,
+        1100
+      ],
+      "prune_iterations": [
+        600,
+        700,
+        800,
+        900,
+        1000,
+        1100
+      ],
+      "manifest_sha256": "608cf582c459b67dd88b132912d37563477d77c8d5041656d4b99a8e9d0b4902"
+    }
+  ],
+  "limitations": [
+    "single seed, reduced settings",
+    "outdoor first-run overhead prevents speedup claim",
+    "CUDA and nvidia-smi memory accounting disagree; retain both",
+    "LPIPS unavailable locally",
+    "SfM originally fit with all views",
+    "no independent final test scene"
+  ]
+}
