@@ -73,3 +73,7 @@ Next most informative experiment: warm runtime first, repeat both treatments on 
 ## Outdoor growth follow-up � 2026-09-10
 
 Completed the newly authorized configuration-only outdoor campaign: one warmup plus six runs, three seeds and five quality checkpoints. See `outdoor-growth-study.md` and `outdoor-growth-results.json` for the current conclusion: reject grow .14 under the elapsed-cost screen; no promotion. This supersedes the initial retain decision for the tested longer outdoor schedule only. No rebuild or changes to existing evidence. HANDOFF.md contains the current resume state.
+
+## Outdoor growth duration follow-up — 2026-09-10
+
+Completed configuration-only growth duration campaign: one warmup plus six measured runs across seeds 42/43/44 with seven quality checkpoints and counterbalanced execution order. Evaluated baseline (grow_until_iter: 2400) against extended growth (grow_until_iter: 3200) at grow_fraction: 0.07. See outdoor-duration-study.md and outdoor-duration-results.json. The candidate passed the 15% elapsed cost screen (elapsed ratios 0.91–1.03) but regressed quality across 2 of 3 seeds (-0.088 dB mean PSNR delta). Decision: reject extended duration; no promotion. HANDOFF.md updated with current resume state.
