@@ -80,7 +80,7 @@ def main() -> int:
     ap.add_argument("output", type=Path)
     ap.add_argument("--groups", type=int, default=0, help="0 selects up to 24 complete groups")
     ap.add_argument("--holdout-groups", type=int, default=0, help="0 selects one eighth of groups")
-    ap.add_argument("--test-every", type=int, default=8)
+    ap.add_argument("--test-every", type=int, default=8, choices=[8], help="This screening adapter implements a 7:1 split")
     args = ap.parse_args()
     root, out = args.dataset.resolve(), args.output.resolve()
     sparse = root / "sparse" / "0"
@@ -130,8 +130,10 @@ def main() -> int:
     if out == root or root in out.parents: raise SystemExit("output must not be inside source dataset")
     (out / "images").mkdir(parents=True); (out / "masks").mkdir(exist_ok=True); (out / "sparse" / "0").mkdir(parents=True)
     for r in ordered:
+        if Path(r["name"]).is_absolute() or ".." in Path(r["name"]).parts:
+            raise SystemExit(f"image name must be a contained relative path: {r['name']}")
         src = (root / "images" / r["name"]).resolve()
-        if root not in src.parents: raise SystemExit(f"image escapes source root: {r['name']}")
+        if not src.is_relative_to((root / "images").resolve()): raise SystemExit(f"image escapes source images: {r['name']}")
         if not src.is_file(): raise SystemExit(f"missing image: {src}")
         link(src, out / "images" / r["name"])
         mask = (root / "masks" / Path(r["name"]).with_suffix(".png")).resolve()
