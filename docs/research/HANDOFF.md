@@ -118,7 +118,18 @@ Key Outcomes:
 - **Trajectory Dominance at Step 5k**: Unanimous win across all 3 seeds (mean +0.498 dB PSNR, +0.0057 SSIM).
 - **Overall Quality & Resource Balance**: Mean final delta +0.195 dB PSNR and +0.0089 SSIM; memory ratio 0.993x (identical); elapsed ratio 1.013x (well within 15% screen).
 
-Next exact read-only command: `Get-Content docs/research/kgs-strategy-study.md`. No pending GPU job.
+### 4. Upstream Integration & Protocol Evolution:
+- **Upstream Merge**: Cleanly merged all 18 commits from `upstream/master` into `codex/hillclimb-mrnf` (commit `751f85e2`).
+- **Core Upstream Fixes Incorporated**:
+  - `10ded50b` & `eab2527f`: FastGS fused-Adam mean-step far-field carry fix and tensor mask in Adam optimizer (prevents pointer scrambling and enables background scaling).
+  - `85bcc177`: Planar surface scale_max pruning fix (stops erroneous pruning of flat discs during normal regularization).
+  - `41e4039e`: Saturated opacity erosion.
+  - New SSOG / LOD exporters, decimation kernels, and loader pipelines.
+- **KGS Adaptation**: Updated `src/training/strategies/kgs.cpp` and `kgs.hpp` to adopt upstream's `scale_max` check, `get_training_dataset()` override, and tensor-based `publish_mean_step_far_mask`.
+- **Protocol Enhancements**: Documented Failure Dissection Rule, Multi-Scale Trajectory Profiling, and Invariant Telemetry in `scripts/research_hillclimb/README.md`.
+- **Build Verification**: Clean rebuild of `LichtFeld-Studio.exe` and `lfs_py.pyd` verified with exit code 0 and all unit tests passing.
+
+Next exact read-only command: `Get-Content docs/research/kgs-strategy-study.md`. No pending GPU job. Branch is clean and push-synchronized with remote.
 
 ## Data and interruption safety
 Valid staging only: `test-1-2-v3` outdoor 112 train / 16 eval; `sparse-cubic-v3` indoor 126 / 18. Same parent `results/research_hillclimb/staging`. v2 INVALID and unused. Whole captures held out, adjacent captures excluded. Images are hardlinks: never edit staged files.
