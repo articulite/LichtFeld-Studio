@@ -1,7 +1,7 @@
 # Provider-neutral handoff: MRNF hill climb
 
 ## Status
-Latest outdoor screen footprint clamping (max_screen_share: 0.2) campaign COMPLETE, 2026-09-10. No pending build or GPU job. Read `outdoor-screen-share-02-study.md` and `outdoor-screen-share-02-results.json` first. Seven new successful runs (one warmup, six measured), zero failures; fresh budget exhausted. Candidate (`max_screen_share: 0.2` vs baseline `0.3` at standard `grow_fraction: 0.07`, `grow_until_iter: 2400` on outdoor `test-1-2-v3`) passed resource comparability screens (elapsed ratio 0.963x, -3.7% faster, peak VRAM 1.004x) and achieved late PSNR gains (+0.085 dB mean PSNR). However, tightening max screen footprint caused severe early quality collapse (-1.20 dB @ iter 400, -0.88 dB @ iter 800) due to premature splitting of broad primitives, and regressed final SSIM across 2 of 3 seeds (net mean SSIM delta -0.000625). INCONCLUSIVE; NO PROMOTION. All previous runs remain immutable preserved evidence.
+Latest outdoor background improvements (`background_improvements: true` vs `false`) campaign COMPLETE, 2026-09-10. All 3 studies from the optimization brief are now executed and evaluated. No pending build or GPU job. Read `outdoor-background-improvements-study.md` and `outdoor-background-improvements-results.json` first. Seven new successful runs (one warmup, six measured), zero failures; fresh budget exhausted. Candidate (`background_improvements: true` vs baseline `false` at standard `grow_fraction: 0.07`, `grow_until_iter: 2400` on outdoor `test-1-2-v3`) triggered a massive 10.6x Gaussian explosion (~90.2k vs ~8.5k), violating elapsed comparability on 2 of 3 seeds (elapsed ratios 1.187x and 1.252x, +18.7% and +25.2%), regressed final PSNR unanimously across all 3 seeds (net mean delta -0.079338 dB), and caused catastrophic structural degradation with unanimous SSIM collapse across every seed (net mean delta -0.016826). REJECT SCREEN; NO PROMOTION. All previous runs remain immutable preserved evidence.
 
 User authorized local bounded experiments on branch `codex/hillclimb-mrnf`, Luna subagents with primary review, resumability, cost restraint, and smaller dataset first. Luna work was reviewed/repaired; agents then hit usage limits. No upstream merge, large downloads, purchases or automation authorized.
 
@@ -60,23 +60,29 @@ All runs under `results/research_hillclimb/runs`:
   - C43 `20260910T210404Z-104cc783`, B43 `20260910T210428Z-44c966f1`
   - B44 `20260910T210451Z-1e9a523e`, C44 `20260910T210512Z-52823e9d`
   - Result: Rejected under elapsed screen (seed 42 ratio 1.326x exceeded 15% ceiling) and quality screen (2/3 seeds regressed in PSNR).
+- **Outdoor screen footprint clamping campaign** (seeds 42/43/44, 3600 iters, baseline .3 vs candidate .2):
+  - Warmup `20260910T210900Z-6192ca35`
+  - B42 `20260910T210904Z-0e17b068`, C42 `20260910T210921Z-f910eab7`
+  - C43 `20260910T210938Z-4c3307bd`, B43 `20260910T210953Z-42ce8ddb`
+  - B44 `20260910T211010Z-955f1aa1`, C44 `20260910T211027Z-8ce421f9`
+  - Result: Inconclusive / no promotion (passed elapsed cost -3.7%, late PSNR gain +0.085 dB, but severe early quality collapse -1.20 dB and SSIM regression in 2/3 seeds).
 
-## Latest campaign: Outdoor Screen Footprint Clamping (0.2)
-Configuration-only outdoor `test-1-2-v3`, seeds 42/43/44, baseline `max_screen_share: 0.3` vs candidate `0.2` at fixed `grow_fraction: 0.07`, `grow_until_iter: 2400`, 3600 iterations, width 512, cap 100000. Seven quality checkpoints: 400, 800, 1200, 2400, 2800, 3200, 3600. Counterbalanced execution order: Warmup, B42, C42, C43, B43, B44, C44.
+## Latest campaign: Outdoor Background Improvements (true vs false)
+Configuration-only outdoor `test-1-2-v3`, seeds 42/43/44, baseline `background_improvements: false` vs candidate `true` at fixed `grow_fraction: 0.07`, `grow_until_iter: 2400`, 3600 iterations, width 512, cap 100000. Seven quality checkpoints: 400, 800, 1200, 2400, 2800, 3200, 3600. Counterbalanced execution order: Warmup, B42, C42, C43, B43, B44, C44.
 
 New run IDs:
-- Warmup (400 iters, seed 42): `20260910T210900Z-6192ca35`
-- B42: `20260910T210904Z-0e17b068`
-- C42: `20260910T210921Z-f910eab7`
-- C43: `20260910T210938Z-4c3307bd`
-- B43: `20260910T210953Z-42ce8ddb`
-- B44: `20260910T211010Z-955f1aa1`
-- C44: `20260910T211027Z-8ce421f9`
+- Warmup (400 iters, seed 42): `20260910T211442Z-c94d35d4`
+- B42: `20260910T211446Z-f61878d8`
+- C42: `20260910T211506Z-eaa76067`
+- C43: `20260910T211523Z-779bff8c`
+- B43: `20260910T211543Z-da133f46`
+- B44: `20260910T211600Z-00e91fb1`
+- C44: `20260910T211617Z-10689a37`
 
-Local plan/runner/checks: `results/research_hillclimb/outdoor-screen-share-02-20260910/`.
-Decision: **inconclusive_no_promotion**. The candidate passed elapsed cost (0.907–1.003, -3.7% mean) and sampled VRAM screens (0.996–1.016) with Gaussian count rising slightly (+2.6% to 8,691). While it achieved late PSNR convergence (+0.085 dB mean gain), it caused severe early trajectory degradation (-1.198 dB @ 400) and regressed final SSIM in 2 of 3 seeds (net mean delta -0.000625).
+Local plan/runner/checks: `results/research_hillclimb/outdoor-background-improvements-20260910/`.
+Decision: **reject_screen; no promotion**. The candidate triggered an unconstrained 10.6x Gaussian explosion (~90.2k vs ~8.5k) from far-field seeding and splitting, breaching the 15% elapsed cost screen on seeds 43 (+18.7%) and 44 (+25.2%). While active growth showed early PSNR gains filling empty background pixels, post-growth refinement degraded, causing unanimous final PSNR regressions (-0.011 dB, -0.214 dB, -0.013 dB; net mean -0.079 dB) and catastrophic structural collapse across all seeds (SSIM drop of -0.0168 across all seeds).
 
-Next exact read-only command: `Get-Content docs/research/outdoor-screen-share-02-study.md`. No pending training command.
+Next exact read-only command: `Get-Content docs/research/outdoor-background-improvements-study.md`. No pending training command.
 
 ## Data and interruption safety
 Valid staging only: `test-1-2-v3` outdoor 112 train / 16 eval; `sparse-cubic-v3` indoor 126 / 18. Same parent `results/research_hillclimb/staging`. v2 INVALID and unused. Whole captures held out, adjacent captures excluded. Images are hardlinks: never edit staged files.
