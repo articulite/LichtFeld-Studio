@@ -1349,9 +1349,11 @@ namespace lfs::training {
             }
         }
 
+        // Normal regularization intentionally flattens one axis. A thin
+        // surface still has useful extent; prune only if every axis collapses.
         auto prune_mask = (raw_opacities < raw_opacity_prune_threshold) |
                           compute_near_zero_rotation_mask(_splat_data->rotation_raw()) |
-                          (scale_min < MRNF_LOG_MIN_SCALE_THRESHOLD);
+                          (scale_max < MRNF_LOG_MIN_SCALE_THRESHOLD);
 
         // Bounds-dependent pruning is unsafe for one-point or colocated models:
         // log(0) would classify every finite scale as oversized. Keep the
@@ -1782,16 +1784,16 @@ namespace lfs::training {
             return;
         }
         if (!background_improvements_enabled()) {
-            _optimizer->set_mean_step_far_mask(nullptr, 0);
+            _optimizer->set_mean_step_far_mask({});
             return;
         }
         const size_t n = _splat_data ? static_cast<size_t>(_splat_data->size()) : 0;
         if (!_camera_hull_valid || n == 0 || !_far_field_mask.is_valid() ||
             _far_field_mask.numel() != n) {
-            _optimizer->set_mean_step_far_mask(nullptr, 0);
+            _optimizer->set_mean_step_far_mask({});
             return;
         }
-        _optimizer->set_mean_step_far_mask(_far_field_mask.ptr<bool>(), static_cast<int>(n));
+        _optimizer->set_mean_step_far_mask(_far_field_mask);
     }
 
     void KGS::ensure_mean_step_far_mask() {

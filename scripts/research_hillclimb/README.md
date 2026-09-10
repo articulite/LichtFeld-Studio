@@ -84,6 +84,22 @@ regression tolerances. Inspect saved GT/render crops. Record retain/reject/pendi
 and its evidence in the research log. No target-setting promotion from screening.
 The evaluator and split preparation must stay frozen during candidate changes.
 
+### White-Box Invariants & Failure Dissection Protocol
+1. **Failure Dissection Rule**: When an algorithmic hypothesis or feature switch fails a
+   screening campaign (e.g. regression or excessive variance), do not simply record
+   "falsified" and discard the concept. Check internal telemetry (kernel arguments,
+   effective execution paths, optimizer bindings, and prune causes). Verify that the
+   underlying C++ machinery was actually executing as designed before concluding the
+   mathematical concept is invalid.
+2. **Multi-Scale Trajectory Profiling**: Evaluate quality and capacity across multiple
+   intermediate checkpoints (e.g. 1k, 3k, 5k, 7k, 10k, 15k) rather than evaluating only the
+   final snapshot. This distinguishes early primitive starvation from late capacity plateauing.
+3. **Internal State Telemetry**: Monitor internal strategy invariants alongside global PSNR/SSIM:
+   - Soft-prune counts and breakdown (opacity decay vs. scale vs. degenerate rotation).
+   - Capacity progression ($N_{\text{active}}$ vs. $N_{\text{cap}}$).
+   - Invariant unit testing: verify optimizer bindings across spatial reorders, compaction,
+     and checkpoint restoration.
+
 ## Tests
 
 ```powershell
