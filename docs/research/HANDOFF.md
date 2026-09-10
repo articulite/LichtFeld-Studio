@@ -1,7 +1,7 @@
 # Provider-neutral handoff: MRNF hill climb
 
 ## Status
-Latest outdoor growth duration campaign COMPLETE, 2026-09-10. No pending build or GPU job. Read `outdoor-duration-study.md` and `outdoor-duration-results.json` first. Seven new successful runs (one warmup, six measured), zero failures; fresh budget exhausted. Candidate (extended growth to 3200 vs 2400) passes resource comparability (elapsed ratios 0.91-1.03) under counterbalanced ordering, but regresses quality across 2 of 3 seeds with -0.087583 dB net mean PSNR delta. NO PROMOTION. All previous runs (initial 4-run screen and 7-run growth fraction study) remain immutable preserved evidence.
+Latest outdoor intermediate growth campaign COMPLETE, 2026-09-10. No pending build or GPU job. Read `outdoor-intermediate-growth-study.md` and `outdoor-intermediate-growth-results.json` first. Seven new successful runs (one warmup, six measured), zero failures; fresh budget exhausted. Candidate (`grow_fraction: 0.10` vs baseline `0.07` at standard `grow_until_iter: 2400`) passes resource comparability (elapsed ratios 1.050-1.066, +5.0% to +6.6%) and sampled VRAM screen (+0.8% to +3.2%) under counterbalanced ordering, achieving net positive mean PSNR gain (+0.121937 dB) across all 7 checkpoints with strong gains on seeds 43 (+0.137 dB) and 44 (+0.238 dB). However, seed 42 regressed slightly (-0.0092 dB PSNR, -0.0012 SSIM). INCONCLUSIVE / NO PROMOTION under strict zero-regression criteria. All previous runs (initial 4-run screen, 7-run growth fraction study, 7-run growth duration study) remain immutable preserved evidence.
 
 User authorized local bounded experiments on branch `codex/hillclimb-mrnf`, Luna subagents with primary review, resumability, cost restraint, and smaller dataset first. Luna work was reviewed/repaired; agents then hit usage limits. No upstream merge, large downloads, purchases or automation authorized.
 
@@ -18,23 +18,29 @@ All runs under `results/research_hillclimb/runs`:
   - B43 `20260910T190201Z-da3866f5`, C43 `20260910T190214Z-b373c376`
   - B44 `20260910T190230Z-ac9e1443`, C44 `20260910T190243Z-ffdd8176`
   - Result: Rejected under 15% elapsed-cost screen (+18-20% time from 4.08x Gaussians).
+- **Outdoor growth duration campaign** (seeds 42/43/44, 3600 iters, baseline 2400 vs candidate 3200):
+  - Warmup `20260910T191624Z-17274ab5`
+  - B42 `20260910T191628Z-f716675d`, C42 `20260910T191644Z-c9238faa`
+  - C43 `20260910T191700Z-fc56121d`, B43 `20260910T191715Z-a63fe301`
+  - B44 `20260910T191731Z-3c25458f`, C44 `20260910T191748Z-ebcdc8f8`
+  - Result: Rejected under quality screen (-0.088 dB mean PSNR delta from truncated post-growth refinement).
 
-## Latest campaign: Outdoor Growth Duration
-Configuration-only outdoor `test-1-2-v3`, seeds 42/43/44, baseline `grow_until_iter: 2400` vs candidate `3200` at fixed `grow_fraction: 0.07`, 3600 iterations, width 512, cap 100000. Seven quality checkpoints: 400, 800, 1200, 2400, 2800, 3200, 3600. Counterbalanced execution order: Warmup, B42, C42, C43, B43, B44, C44.
+## Latest campaign: Outdoor Intermediate Growth (0.10)
+Configuration-only outdoor `test-1-2-v3`, seeds 42/43/44, baseline `grow_fraction: 0.07` vs candidate `0.10` at fixed `grow_until_iter: 2400`, 3600 iterations, width 512, cap 100000. Seven quality checkpoints: 400, 800, 1200, 2400, 2800, 3200, 3600. Counterbalanced execution order: Warmup, B42, C42, C43, B43, B44, C44.
 
 New run IDs:
-- Warmup (400 iters, seed 42): `20260910T191624Z-17274ab5`
-- B42: `20260910T191628Z-f716675d`
-- C42: `20260910T191644Z-c9238faa`
-- C43: `20260910T191700Z-fc56121d`
-- B43: `20260910T191715Z-a63fe301`
-- B44: `20260910T191731Z-3c25458f`
-- C44: `20260910T191748Z-ebcdc8f8`
+- Warmup (400 iters, seed 42): `20260910T192745Z-d78d8c28`
+- B42: `20260910T192748Z-6e03044b`
+- C42: `20260910T192802Z-f5f2fe46`
+- C43: `20260910T192817Z-08d64f48`
+- B43: `20260910T192832Z-3676ea09`
+- B44: `20260910T192846Z-f06dc53e`
+- C44: `20260910T192900Z-38873c9e`
 
-Local plan/runner/checks: `results/research_hillclimb/duration-study-20260910/`.
-Decision: **reject extended duration; no promotion**. The candidate successfully passed the 15% elapsed cost screen (elapsed ratios 1.0308, 0.9958, 0.9059) and expanded Gaussians moderately to 14,084 (1.66x baseline), but regressed final quality across 2 of 3 seeds (seed 42: -0.174 dB, seed 44: -0.362 dB, mean delta: -0.088 dB). Checkpoint dynamics confirm that continuing growth up to iteration 3200 leaves insufficient post-growth refinement steps (400 vs 1200 in baseline), truncating convergence.
+Local plan/runner/checks: `results/research_hillclimb/intermediate-growth-20260910/`.
+Decision: **inconclusive; no promotion**. The candidate successfully passed the 15% elapsed cost screen (elapsed ratios 1.0503, 1.0584, 1.0658, +5.0% to +6.6%) and expanded Gaussians moderately to 15,893 (1.87x baseline), resolving the runtime inflation of `grow_fraction: 0.14` and avoiding the refinement truncation of `grow_until_iter: 3200`. It achieved net positive mean PSNR gain (+0.122 dB) across the entire trajectory and improved seeds 43 (+0.137 dB) and 44 (+0.238 dB). However, seed 42 exhibited a small regression (-0.0092 dB PSNR, -0.0012 SSIM), preventing unanimous dominance under the strict zero-regression criterion.
 
-Next exact read-only command: `Get-Content docs/research/outdoor-duration-study.md`. No pending training command.
+Next exact read-only command: `Get-Content docs/research/outdoor-intermediate-growth-study.md`. No pending training command.
 
 ## Data and interruption safety
 Valid staging only: `test-1-2-v3` outdoor 112 train / 16 eval; `sparse-cubic-v3` indoor 126 / 18. Same parent `results/research_hillclimb/staging`. v2 INVALID and unused. Whole captures held out, adjacent captures excluded. Images are hardlinks: never edit staged files.
