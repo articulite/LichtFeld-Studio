@@ -19,7 +19,7 @@ def assess(baselines, candidates):
             for key in ['dataset_identity','split','requested_seed','executable_sha256','evaluator_fingerprints','provenance_files']:
                 if bm[key]!=cm[key]: row['issues'].append(f'mismatched {key}')
             differences={k for k in bm['config'].keys()|cm['config'].keys() if bm['config'].get(k)!=cm['config'].get(k)}
-            if differences!={'grow_fraction'}: row['issues'].append(f'candidate mutation scope: {sorted(differences)}')
+            if len(differences) != 1: row['issues'].append(f'candidate mutation scope: {sorted(differences)}')
             btime=bs['elapsed_seconds']; ctime=cs['elapsed_seconds']
             bmem=bs['vram']['sampled_peak_mib']; cmem=cs['vram']['sampled_peak_mib']
             row.update(psnr_delta=c['psnr']-b['psnr'],ssim_delta=c['ssim']-b['ssim'],
