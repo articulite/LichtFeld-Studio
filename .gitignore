@@ -30,6 +30,8 @@ tests/data/nn/*
 *.pt
 *.py
 !scripts/lichtfeld_mcp_bridge.py
+!scripts/research_hillclimb/
+!scripts/research_hillclimb/**/*.py
 !scripts/verify_video_orientation.py
 !tools/gdb/lfs_pretty_printers.py
 !src/python/_lfs_panel_contract.py
