@@ -1332,7 +1332,24 @@ namespace lfs::training {
         auto scale_min = log_scales.min(1);
         auto scale_max = log_scales.max(1);
 
-        auto prune_mask = (raw_opacities < MRNF_RAW_OPACITY_PRUNE_THRESHOLD) |
+        // KGS Dynamic Floater Recycling:
+        // In early growth, maintain conservative threshold (logit(1/255) = -5.54) so developing structure
+        // is not prematurely culled.
+        // When approaching or at max_cap (current_active >= 0.85 * cap), smoothly raise the opacity pruning
+        // threshold up to 0.02 (logit -3.89) to continuously cycle out transparent floaters and free slots
+        // for splitting high-gradient primitives in under-resolved regions.
+        float raw_opacity_prune_threshold = MRNF_RAW_OPACITY_PRUNE_THRESHOLD;
+        if (_params && _params->max_cap > 0 && n > 0) {
+            const float cap_f = static_cast<float>(_params->max_cap);
+            const float active_f = static_cast<float>(active_count());
+            if (active_f >= cap_f * 0.85f) {
+                const float pressure = std::clamp((active_f - cap_f * 0.85f) / (cap_f * 0.15f), 0.0f, 1.0f);
+                const float min_alpha = 0.00392157f + pressure * (0.02f - 0.00392157f);
+                raw_opacity_prune_threshold = logit_clamped(min_alpha);
+            }
+        }
+
+        auto prune_mask = (raw_opacities < raw_opacity_prune_threshold) |
                           compute_near_zero_rotation_mask(_splat_data->rotation_raw()) |
                           (scale_min < MRNF_LOG_MIN_SCALE_THRESHOLD);
 
@@ -2048,14 +2065,16 @@ namespace lfs::training {
             std::round(static_cast<float>(host_counts[0]) * effective_grow_fraction));
         const int candidate_count = static_cast<int>(host_counts[0]);
 
-        // Pace remaining growth across the remaining growth windows so we reach cap near grow_until
-        if (iter < grow_until && cap > 0.0f && current_active >= static_cast<size_t>(min_structural_floor)) {
+        // Pace growth toward reaching target density early (by ~40% of training),
+        // leaving the remainder of training for learning rate decay and fine parameter optimization.
+        const int target_density_iter = std::min(grow_until, std::max(1500, static_cast<int>(_params->iterations * 0.4f)));
+        if (iter < target_density_iter && cap > 0.0f && current_active >= static_cast<size_t>(min_structural_floor)) {
             const int refine_every = std::max(1, static_cast<int>(_params->refine_every));
-            const int windows_left = std::max(1, (grow_until - iter) / refine_every);
+            const int windows_left = std::max(1, (target_density_iter - iter) / refine_every);
             const long long remaining = std::max<long long>(
                 0, static_cast<long long>(cap) - static_cast<long long>(current_active));
-            // Allow headroom per window so growth can respond to scene demand without slamming cap early
-            const long long paced_max = (remaining * 2 + windows_left - 1) / windows_left;
+            // Allow generous headroom per window so growth responds directly to scene demand
+            const long long paced_max = (remaining * 3 + windows_left - 1) / windows_left;
             if (desired_total > 0 && paced_max < desired_total) {
                 desired_total = static_cast<int>(std::max<long long>(1, paced_max));
             }

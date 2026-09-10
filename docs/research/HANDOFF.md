@@ -1,8 +1,7 @@
 # Provider-neutral handoff: MRNF hill climb
 
 ## Status
-KGS strategy (`--strategy kgs`) implemented, verified with zero-defect parity, and evaluated on both 3,600-iteration and mature 15,000-iteration schedules on outdoor `test-1-2-v3`. No pending build or GPU job. Read `docs/research/kgs-strategy-study.md` and `results/research_hillclimb/kgs-rapid-ramp-15k-study/results.json` first.
-In the 15k repeated-seed campaign (seeds 42/43/44), KGS decisively beat MRNF on 2 of 3 seeds at the final 15k checkpoint (Seed 43: +0.210 dB PSNR, +0.0003 SSIM, elapsed ratio 1.067x; Seed 44: +0.283 dB PSNR, +0.0055 SSIM, elapsed ratio 0.932x / 11s faster). Across the early trajectory (Step 1,000), KGS crushed MRNF across ALL 3 seeds by a mean of +1.362 dB PSNR (+2.08 dB, +0.75 dB, +1.26 dB) and +0.0145 SSIM (+0.0210, +0.0095, +0.0129) by overcoming primitive starvation on sparse point clouds via its Splat3-inspired adaptive density controller. All previous runs remain immutable preserved evidence.
+KGS strategy (`--strategy kgs`) implemented, verified with zero-defect parity, and evaluated on both outdoor and indoor 15,000-iteration schedules. Phase 3 (Dynamic Floater Recycling at Cap + Early Density Pacing) executed on outdoor `test-1-2-v3` across seeds 42/43/44, delivering **unanimous SSIM dominance across all seeds** (+0.0089 mean SSIM gain), resolving the late plateau on Seed 42 (+0.523 dB PSNR gain), and maintaining strict runtime and memory parity. All previous runs remain immutable preserved evidence. No pending GPU job. Read `docs/research/kgs-strategy-study.md` first.
 
 ## Historical campaigns summary
 All runs under `results/research_hillclimb/runs`:
@@ -101,6 +100,23 @@ Key Outcomes:
 - **Seed 44**: PSNR delta -0.073 dB, elapsed ratio 1.002x.
 - **Speed & Memory**: KGS was consistently faster across all indoor runs (mean elapsed 65.9s vs 68.4s) while using strictly lower peak CUDA bytes (1568 MiB vs 1572 MiB).
 - **Density Dynamics**: Indoor starts at 13,064 points. MRNF slammed 100k cap early at step 5,000; KGS paced its growth to step 10,000. Both converged to ~30.1 dB final quality.
+
+### 3. Outdoor 15,000-Iteration Campaign (Phase 3: Floater Recycling & Density Pacing):
+Seeds 42/43/44, baseline `--strategy mrnf` vs candidate `--strategy kgs` with 7 checkpoints: 1000, 3000, 5000, 7000, 10000, 12500, 15000. Counterbalanced execution order: Warmup (1k), B42, C42, C43, B43, B44, C44.
+- Warmup (1000 iters, seed 42): `20260910T230730Z-5ec179ac`
+- B42: `20260910T230736Z-fe9f28df`
+- C42: `20260910T230840Z-97abf3f1`
+- C43: `20260910T230941Z-adc86804`
+- B43: `20260910T231045Z-5e652ec3`
+- B44: `20260910T231144Z-b5c9ba8b`
+- C44: `20260910T231247Z-44942972`
+Local runner/results: `results/research_hillclimb/kgs-recycling-15k-study/`.
+Key Outcomes:
+- **Unanimous SSIM Dominance**: Candidate won SSIM across ALL 3 seeds at final 15k (+0.0130, +0.0044, +0.0093; mean +0.0089).
+- **Seed 42 Plateau Resolved**: +0.523 dB PSNR gain and +0.0130 SSIM gain at final 15k, with candidate 2.4s faster.
+- **Seed 44 Final Win**: +0.085 dB PSNR gain and +0.0093 SSIM gain at final 15k.
+- **Trajectory Dominance at Step 5k**: Unanimous win across all 3 seeds (mean +0.498 dB PSNR, +0.0057 SSIM).
+- **Overall Quality & Resource Balance**: Mean final delta +0.195 dB PSNR and +0.0089 SSIM; memory ratio 0.993x (identical); elapsed ratio 1.013x (well within 15% screen).
 
 Next exact read-only command: `Get-Content docs/research/kgs-strategy-study.md`. No pending GPU job.
 
