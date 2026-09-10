@@ -1,7 +1,7 @@
 # Provider-neutral handoff: MRNF hill climb
 
 ## Status
-Latest indoor calibrated growth (0.085) campaign COMPLETE, 2026-09-10. No pending build or GPU job. Read `indoor-growth-085-study.md` and `indoor-growth-085-results.json` first. Seven new successful runs (one warmup, six measured), zero failures; fresh budget exhausted. Candidate (`grow_fraction: 0.085` vs baseline `0.07` on indoor `sparse-cubic-v3` at standard `grow_until_iter: 2400`) passes resource comparability across all pairs (elapsed ratios 1.042-1.051, +4.2% to +5.1%) and sampled VRAM screen (1.000 to 0.988) under counterbalanced ordering, achieving unanimous quality dominance across all three seeds (+0.081 dB, +0.033 dB, +0.109 dB; net mean PSNR gain +0.074436 dB; SSIM +0.0013). RETAIN FOR REPEATED-SEED SCREENING; NO PROMOTION. All previous runs remain immutable preserved evidence.
+Latest outdoor calibrated growth (0.085) campaign COMPLETE, 2026-09-10. No pending build or GPU job. Read `outdoor-growth-085-study.md` and `outdoor-growth-085-results.json` first. Seven new successful runs (one warmup, six measured), zero failures; fresh budget exhausted. Candidate (`grow_fraction: 0.085` vs baseline `0.07` on outdoor `test-1-2-v3` at standard `grow_until_iter: 2400`) passes resource comparability (elapsed ratios 0.992-1.067, +3.1% mean) and sampled VRAM screen, but regressed final quality across 2 of 3 seeds (seed 42: -0.251 dB, seed 43: -0.085 dB; net mean PSNR delta -0.099662 dB). REJECT CANDIDATE; NO PROMOTION. Combined cross-scene synthesis demonstrates that optimal growth rate is scene-dependent (indoor benefits monotonically from 0.085, outdoor underfits at 0.085). All previous runs remain immutable preserved evidence.
 
 User authorized local bounded experiments on branch `codex/hillclimb-mrnf`, Luna subagents with primary review, resumability, cost restraint, and smaller dataset first. Luna work was reviewed/repaired; agents then hit usage limits. No upstream merge, large downloads, purchases or automation authorized.
 
@@ -36,23 +36,29 @@ All runs under `results/research_hillclimb/runs`:
   - C43 `20260910T193459Z-f6b0836a`, B43 `20260910T193520Z-94669d55`
   - B44 `20260910T193540Z-dc5e36b5`, C44 `20260910T193601Z-838acda7`
   - Result: Rejected under screen (unanimous gain +0.202 dB mean PSNR, but seed 42 elapsed ratio 1.1589 exceeded 15% band).
+- **Indoor calibrated growth campaign** (seeds 42/43/44, 3600 iters, baseline .07 vs candidate .085):
+  - Warmup `20260910T194116Z-835c2a28`
+  - B42 `20260910T194120Z-62259ee7`, C42 `20260910T194139Z-0a542599`
+  - C43 `20260910T194200Z-19d382bb`, B43 `20260910T194219Z-bafbd608`
+  - B44 `20260910T194238Z-c4734796`, C44 `20260910T194258Z-11dddab3`
+  - Result: Retained for repeated-seed screening (passed elapsed cost +4-5%, unanimous quality dominance +0.074 dB mean PSNR across all seeds).
 
-## Latest campaign: Indoor Calibrated Growth (0.085)
-Configuration-only indoor `sparse-cubic-v3`, seeds 42/43/44, baseline `grow_fraction: 0.07` vs candidate `0.085` at fixed `grow_until_iter: 2400`, 3600 iterations, width 512, cap 100000. Seven quality checkpoints: 400, 800, 1200, 2400, 2800, 3200, 3600. Counterbalanced execution order: Warmup, B42, C42, C43, B43, B44, C44.
+## Latest campaign: Outdoor Calibrated Growth (0.085)
+Configuration-only outdoor `test-1-2-v3`, seeds 42/43/44, baseline `grow_fraction: 0.07` vs candidate `0.085` at fixed `grow_until_iter: 2400`, 3600 iterations, width 512, cap 100000. Seven quality checkpoints: 400, 800, 1200, 2400, 2800, 3200, 3600. Counterbalanced execution order: Warmup, B42, C42, C43, B43, B44, C44.
 
 New run IDs:
-- Warmup (400 iters, seed 42): `20260910T194116Z-835c2a28`
-- B42: `20260910T194120Z-62259ee7`
-- C42: `20260910T194139Z-0a542599`
-- C43: `20260910T194200Z-19d382bb`
-- B43: `20260910T194219Z-bafbd608`
-- B44: `20260910T194238Z-c4734796`
-- C44: `20260910T194258Z-11dddab3`
+- Warmup (400 iters, seed 42): `20260910T204913Z-f371d1a5`
+- B42: `20260910T204917Z-8c8a9bd9`
+- C42: `20260910T204933Z-7b6b52e7`
+- C43: `20260910T204949Z-37861259`
+- B43: `20260910T205005Z-c1c489b0`
+- B44: `20260910T205021Z-c8d13805`
+- C44: `20260910T205037Z-9e6e6bb3`
 
-Local plan/runner/checks: `results/research_hillclimb/indoor-growth-085-20260910/`.
-Decision: **retain for repeated-seed screening; no promotion**. The candidate successfully passed the 15% elapsed cost screen across all three pairs (elapsed ratios 1.0510, 1.0450, 1.0418, +4.2% to +5.1%) and controlled Gaussian count to ~72,882 (1.34x baseline). It achieved unanimous quality dominance across all three seeds (+0.081 dB, +0.033 dB, +0.109 dB; net mean PSNR delta +0.074436 dB; SSIM +0.0013). Under our screening protocol, single-scene screening retains the candidate for multi-scene verification without target-setting promotion.
+Local plan/runner/checks: `results/research_hillclimb/outdoor-growth-085-20260910/`.
+Decision: **reject candidate; no promotion**. The candidate passed the 15% elapsed cost screen (elapsed ratios 1.0338, 0.9917, 1.0666, +3.1% mean) and expanded Gaussians moderately to ~11,698 (1.38x baseline), but regressed final quality across 2 of 3 seeds (seed 42: -0.251 dB, seed 43: -0.085 dB; net mean PSNR delta -0.099662 dB). At 11.7k Gaussians, the outdoor model underfits fine details while creating optimization noise that impedes post-growth refinement. Combined cross-scene synthesis shows that optimal growth rate is scene-dependent (indoor benefits from 0.085, outdoor underfits at 0.085).
 
-Next exact read-only command: `Get-Content docs/research/indoor-growth-085-study.md`. No pending training command.
+Next exact read-only command: `Get-Content docs/research/outdoor-growth-085-study.md`. No pending training command.
 
 ## Data and interruption safety
 Valid staging only: `test-1-2-v3` outdoor 112 train / 16 eval; `sparse-cubic-v3` indoor 126 / 18. Same parent `results/research_hillclimb/staging`. v2 INVALID and unused. Whole captures held out, adjacent captures excluded. Images are hardlinks: never edit staged files.
