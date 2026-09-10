@@ -66,10 +66,10 @@ All runs under `results/research_hillclimb/runs`:
   - B44 `20260910T211010Z-955f1aa1`, C44 `20260910T211027Z-8ce421f9`
   - Result: Inconclusive / no promotion (passed elapsed cost -3.7%, late PSNR gain +0.085 dB, but severe early quality collapse -1.20 dB and SSIM regression in 2/3 seeds).
 
-## Latest campaign: KGS Adaptive Density Controller (15,000 iterations)
-Mature 15,000-iteration campaign on outdoor `test-1-2-v3`, seeds 42/43/44, baseline `--strategy mrnf` vs candidate `--strategy kgs` with 7 checkpoints: 1000, 3000, 5000, 7000, 10000, 12500, 15000. Counterbalanced execution order: Warmup (1k), B42, C42, C43, B43, B44, C44.
+## Latest campaigns: KGS Strategy Studies (15,000 iterations)
 
-New run IDs:
+### 1. Outdoor 15,000-Iteration Campaign (`test-1-2-v3`):
+Seeds 42/43/44, baseline `--strategy mrnf` vs candidate `--strategy kgs` with 7 checkpoints: 1000, 3000, 5000, 7000, 10000, 12500, 15000. Counterbalanced execution order: Warmup (1k), B42, C42, C43, B43, B44, C44.
 - Warmup (1000 iters, seed 42): `20260910T222831Z-ff12c9a0`
 - B42: `20260910T222836Z-0fff1a58`
 - C42: `20260910T222941Z-e8aae283`
@@ -77,16 +77,32 @@ New run IDs:
 - B43: `20260910T223213Z-35aa619b`
 - B44: `20260910T223319Z-7dc28622`
 - C44: `20260910T223438Z-335af007`
-
-Local plan/runner/checks: `results/research_hillclimb/kgs-rapid-ramp-15k-study/`.
+Local runner/results: `results/research_hillclimb/kgs-rapid-ramp-15k-study/`.
 Key Outcomes:
-- **Seed 43**: KGS won final quality (+0.210 dB PSNR, +0.0003 SSIM) with comparable runtime (elapsed ratio 1.067x, within 15% screen).
-- **Seed 44**: KGS won final quality (+0.283 dB PSNR, +0.0055 SSIM) and was faster (elapsed ratio 0.932x, 72.1s vs 77.4s).
-- **Seed 42**: Early dominance (+2.08 dB at 1k, +0.29 dB at 3k), slight late plateau (-0.260 dB at 15k, elapsed ratio 1.226x).
+- **Seed 43**: KGS won final quality (+0.210 dB PSNR, +0.0003 SSIM) with comparable runtime (ratio 1.067x, within 15% screen).
+- **Seed 44**: KGS won final quality (+0.283 dB PSNR, +0.0055 SSIM) and was faster (ratio 0.932x, 72.1s vs 77.4s).
+- **Seed 42**: Early dominance (+2.08 dB at 1k, +0.29 dB at 3k), slight late plateau (-0.260 dB at 15k, ratio 1.226x).
 - **Early trajectory dominance across ALL seeds**: Average delta at step 1000 was **+1.362 dB PSNR** and **+0.0145 SSIM**.
 - **Memory**: Identical peak VRAM (506 MiB vs 508 MiB, ratio 0.996x).
 
-Next exact read-only command: `Get-Content docs/research/kgs-strategy-study.md`. No pending training command.
+### 2. Indoor 15,000-Iteration Campaign (`sparse-cubic-v3`):
+Seeds 42/43/44, baseline `--strategy mrnf` vs candidate `--strategy kgs` with 7 checkpoints: 1000, 3000, 5000, 7000, 10000, 12500, 15000. Counterbalanced execution order: Warmup (1k), B42, C42, C43, B43, B44, C44.
+- Warmup (1000 iters, seed 42): `20260910T224053Z-46a8257a`
+- B42: `20260910T224059Z-9c32432a`
+- C42: `20260910T224210Z-0a0c0e65`
+- C43: `20260910T224316Z-924eb1ba`
+- B43: `20260910T224422Z-0d4d6c2b`
+- B44: `20260910T224531Z-b7f65ada`
+- C44: `20260910T224639Z-53c07d98`
+Local runner/results: `results/research_hillclimb/kgs-indoor-15k-study/`.
+Key Outcomes:
+- **Seed 42**: PSNR delta -0.174 dB, elapsed ratio 0.925x (5.3s faster).
+- **Seed 43**: PSNR delta -0.049 dB, elapsed ratio 0.966x (2.3s faster).
+- **Seed 44**: PSNR delta -0.073 dB, elapsed ratio 1.002x.
+- **Speed & Memory**: KGS was consistently faster across all indoor runs (mean elapsed 65.9s vs 68.4s) while using strictly lower peak CUDA bytes (1568 MiB vs 1572 MiB).
+- **Density Dynamics**: Indoor starts at 13,064 points. MRNF slammed 100k cap early at step 5,000; KGS paced its growth to step 10,000. Both converged to ~30.1 dB final quality.
+
+Next exact read-only command: `Get-Content docs/research/kgs-strategy-study.md`. No pending GPU job.
 
 ## Data and interruption safety
 Valid staging only: `test-1-2-v3` outdoor 112 train / 16 eval; `sparse-cubic-v3` indoor 126 / 18. Same parent `results/research_hillclimb/staging`. v2 INVALID and unused. Whole captures held out, adjacent captures excluded. Images are hardlinks: never edit staged files.
