@@ -1,7 +1,7 @@
 # Provider-neutral handoff: MRNF hill climb
 
 ## Status
-Latest indoor gradient threshold calibration (growth_grad_threshold: 0.002) campaign COMPLETE, 2026-09-10. No pending build or GPU job. Read `indoor-grad-threshold-002-study.md` and `indoor-grad-threshold-002-results.json` first. Seven new successful runs (one warmup, six measured), zero failures; fresh budget exhausted. Candidate (`growth_grad_threshold: 0.002` vs baseline `0.003` at standard `grow_fraction: 0.07` on indoor `sparse-cubic-v3` at standard `grow_until_iter: 2400`) failed elapsed comparability on seed 42 (+32.6% elapsed cost, ratio 1.326x) and regressed quality on 2 of 3 seeds (seed 42: -0.064 dB, seed 44: -0.034 dB, net mean PSNR delta -0.001272 dB). REJECT SCREEN; NO PROMOTION. Combined cross-scene synthesis demonstrates that `growth_grad_threshold: 0.002` does not generalize (modest gain outdoor, candidate dilution and regression indoor). All previous runs remain immutable preserved evidence.
+Latest outdoor screen footprint clamping (max_screen_share: 0.2) campaign COMPLETE, 2026-09-10. No pending build or GPU job. Read `outdoor-screen-share-02-study.md` and `outdoor-screen-share-02-results.json` first. Seven new successful runs (one warmup, six measured), zero failures; fresh budget exhausted. Candidate (`max_screen_share: 0.2` vs baseline `0.3` at standard `grow_fraction: 0.07`, `grow_until_iter: 2400` on outdoor `test-1-2-v3`) passed resource comparability screens (elapsed ratio 0.963x, -3.7% faster, peak VRAM 1.004x) and achieved late PSNR gains (+0.085 dB mean PSNR). However, tightening max screen footprint caused severe early quality collapse (-1.20 dB @ iter 400, -0.88 dB @ iter 800) due to premature splitting of broad primitives, and regressed final SSIM across 2 of 3 seeds (net mean SSIM delta -0.000625). INCONCLUSIVE; NO PROMOTION. All previous runs remain immutable preserved evidence.
 
 User authorized local bounded experiments on branch `codex/hillclimb-mrnf`, Luna subagents with primary review, resumability, cost restraint, and smaller dataset first. Luna work was reviewed/repaired; agents then hit usage limits. No upstream merge, large downloads, purchases or automation authorized.
 
@@ -54,23 +54,29 @@ All runs under `results/research_hillclimb/runs`:
   - C43 `20260910T205635Z-8634e754`, B43 `20260910T205651Z-ee72233f`
   - B44 `20260910T205706Z-38e38129`, C44 `20260910T205722Z-c6848fb2`
   - Result: Inconclusive / no promotion (passed elapsed cost -1.9%, net mean gain +0.089 dB, unanimous SSIM gain, but seed 43 regressed -0.091 dB).
+- **Indoor gradient threshold calibration campaign** (seeds 42/43/44, 3600 iters, baseline .003 vs candidate .002):
+  - Warmup `20260910T210320Z-9061a5a2`
+  - B42 `20260910T210324Z-afa2f47d`, C42 `20260910T210342Z-03123179`
+  - C43 `20260910T210404Z-104cc783`, B43 `20260910T210428Z-44c966f1`
+  - B44 `20260910T210451Z-1e9a523e`, C44 `20260910T210512Z-52823e9d`
+  - Result: Rejected under elapsed screen (seed 42 ratio 1.326x exceeded 15% ceiling) and quality screen (2/3 seeds regressed in PSNR).
 
-## Latest campaign: Indoor Gradient Threshold Calibration (0.002)
-Configuration-only indoor `sparse-cubic-v3`, seeds 42/43/44, baseline `growth_grad_threshold: 0.003` vs candidate `0.002` at fixed `grow_fraction: 0.07`, `grow_until_iter: 2400`, 3600 iterations, width 512, cap 100000. Seven quality checkpoints: 400, 800, 1200, 2400, 2800, 3200, 3600. Counterbalanced execution order: Warmup, B42, C42, C43, B43, B44, C44.
+## Latest campaign: Outdoor Screen Footprint Clamping (0.2)
+Configuration-only outdoor `test-1-2-v3`, seeds 42/43/44, baseline `max_screen_share: 0.3` vs candidate `0.2` at fixed `grow_fraction: 0.07`, `grow_until_iter: 2400`, 3600 iterations, width 512, cap 100000. Seven quality checkpoints: 400, 800, 1200, 2400, 2800, 3200, 3600. Counterbalanced execution order: Warmup, B42, C42, C43, B43, B44, C44.
 
 New run IDs:
-- Warmup (400 iters, seed 42): `20260910T210320Z-9061a5a2`
-- B42: `20260910T210324Z-afa2f47d`
-- C42: `20260910T210342Z-03123179`
-- C43: `20260910T210404Z-104cc783`
-- B43: `20260910T210428Z-44c966f1`
-- B44: `20260910T210451Z-1e9a523e`
-- C44: `20260910T210512Z-52823e9d`
+- Warmup (400 iters, seed 42): `20260910T210900Z-6192ca35`
+- B42: `20260910T210904Z-0e17b068`
+- C42: `20260910T210921Z-f910eab7`
+- C43: `20260910T210938Z-4c3307bd`
+- B43: `20260910T210953Z-42ce8ddb`
+- B44: `20260910T211010Z-955f1aa1`
+- C44: `20260910T211027Z-8ce421f9`
 
-Local plan/runner/checks: `results/research_hillclimb/indoor-grad-threshold-002-20260910/`.
-Decision: **reject_screen; no promotion**. The candidate failed the 15% elapsed cost screen on seed 42 (elapsed ratio 1.3261, +32.6%) and regressed final quality across 2 of 3 seeds (seed 42: -0.064 dB, seed 44: -0.034 dB; net mean PSNR delta -0.001272 dB). Lowering the gradient threshold on dense indoor geometry admits low-gradient noise points, diluting the candidate pool and disrupting post-growth refinement.
+Local plan/runner/checks: `results/research_hillclimb/outdoor-screen-share-02-20260910/`.
+Decision: **inconclusive_no_promotion**. The candidate passed elapsed cost (0.907–1.003, -3.7% mean) and sampled VRAM screens (0.996–1.016) with Gaussian count rising slightly (+2.6% to 8,691). While it achieved late PSNR convergence (+0.085 dB mean gain), it caused severe early trajectory degradation (-1.198 dB @ 400) and regressed final SSIM in 2 of 3 seeds (net mean delta -0.000625).
 
-Next exact read-only command: `Get-Content docs/research/indoor-grad-threshold-002-study.md`. No pending training command.
+Next exact read-only command: `Get-Content docs/research/outdoor-screen-share-02-study.md`. No pending training command.
 
 ## Data and interruption safety
 Valid staging only: `test-1-2-v3` outdoor 112 train / 16 eval; `sparse-cubic-v3` indoor 126 / 18. Same parent `results/research_hillclimb/staging`. v2 INVALID and unused. Whole captures held out, adjacent captures excluded. Images are hardlinks: never edit staged files.
