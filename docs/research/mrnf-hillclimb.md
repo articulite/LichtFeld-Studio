@@ -70,7 +70,7 @@ Decision: RETAIN FOR REPEATED-SEED SCREENING ONLY; NO PROMOTION. PSNR gains +.57
 
 Next most informative experiment: warm runtime first, repeat both treatments on both scenes at seeds42/43/44 in alternating order with a newly declared bounded budget. Calibrate baseline variability and use internal training/perf time alongside total time. If gains survive, increase shared iterations/resolution and compare at matched elapsed-time and memory budgets. Outdoor underfitting and tiny initial point count require checking convergence before attributing the gain to a generally better strategy. Do not expand this completed pass automatically.
 
-## Outdoor growth follow-up � 2026-09-10
+## Outdoor growth follow-up � 2026-09-10
 
 Completed the newly authorized configuration-only outdoor campaign: one warmup plus six runs, three seeds and five quality checkpoints. See `outdoor-growth-study.md` and `outdoor-growth-results.json` for the current conclusion: reject grow .14 under the elapsed-cost screen; no promotion. This supersedes the initial retain decision for the tested longer outdoor schedule only. No rebuild or changes to existing evidence. HANDOFF.md contains the current resume state.
 
@@ -81,3 +81,7 @@ Completed configuration-only growth duration campaign: one warmup plus six measu
 ## Outdoor intermediate growth follow-up — 2026-09-10
 
 Completed configuration-only intermediate growth campaign: one warmup plus six measured runs across seeds 42/43/44 with seven quality checkpoints and counterbalanced execution order. Evaluated baseline (grow_fraction: 0.07) against intermediate growth (grow_fraction: 0.10) with standard growth termination (grow_until_iter: 2400) at 3600 iterations. See outdoor-intermediate-growth-study.md and outdoor-intermediate-growth-results.json. The candidate passed the 15% elapsed cost screen (elapsed ratios 1.050–1.066, +5.0% to +6.6%) and sampled VRAM screen (+0.8% to +3.2%), achieving net positive mean PSNR gain (+0.122 dB) across all 7 checkpoints and positive deltas on seeds 43 (+0.137 dB) and 44 (+0.238 dB). However, seed 42 exhibited a marginal regression (-0.0092 dB PSNR, -0.0012 SSIM). Decision: inconclusive / no promotion under the strict zero-regression screening criteria. HANDOFF.md updated with current resume state.
+
+## Indoor intermediate growth follow-up — 2026-09-10
+
+Completed configuration-only indoor intermediate growth campaign: one warmup plus six measured runs across seeds 42/43/44 with seven quality checkpoints and counterbalanced execution order. Evaluated baseline (grow_fraction: 0.07) against intermediate growth (grow_fraction: 0.10) on indoor scene sparse-cubic-v3 with standard growth termination (grow_until_iter: 2400) at 3600 iterations. See indoor-intermediate-growth-study.md and indoor-intermediate-growth-results.json. The candidate achieved unanimous quality dominance across all three seeds (+0.185 dB, +0.276 dB, +0.145 dB; mean PSNR gain +0.202 dB; SSIM +0.003). However, Gaussian count expanded to 96.5k (close to the 100k cap), causing seed 42 elapsed time to rise by +15.89% (21.88s vs 18.89s), breaching the strict 15% comparability ceiling. Decision: reject_screen / no promotion under the 15% elapsed cost ceiling. HANDOFF.md updated with current resume state.
