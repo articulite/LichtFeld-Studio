@@ -145,7 +145,23 @@ Key Outcomes:
 - **Mid-Trajectory Dominance at Step 5,000**: Decisive win across ALL 3 seeds (mean **+0.493 dB PSNR**, **+0.0026 SSIM**).
 - **Resource Discipline**: Peak CUDA bytes 1564 MB vs 1574 MB (lower memory); elapsed ratio 1.031x (within 15% budget).
 
-Next exact read-only command: `Get-Content docs/research/kgs-adam-reset-study.md`. No pending GPU job. Branch is clean and push-synchronized with remote.
+### 6. Outdoor 15,000-Iteration Campaign (KGS Splat3 Scale-Aware Growth Prior):
+Seeds 42/43/44, baseline `--strategy mrnf` vs candidate `--strategy kgs` with 7 checkpoints: 1000, 3000, 5000, 7000, 10000, 12500, 15000. Counterbalanced execution order: Warmup (1k), B42, C42, C43, B43, B44, C44.
+- Warmup (1000 iters, seed 42): `20260911T003107Z-ebdc4228`
+- B42: `20260911T003120Z-be39ff97`
+- C42: `20260911T003222Z-6204ea8b`
+- C43: `20260911T003323Z-c6829f66`
+- B43: `20260911T003425Z-3c4a723e`
+- B44: `20260911T003526Z-2134bc78`
+- C44: `20260911T003628Z-34896908`
+Local runner/results: `results/research_hillclimb/kgs-scale-prior-15k-study/`.
+Key Outcomes:
+- **Unanimous SSIM Dominance**: Candidate won SSIM across ALL 3 seeds at final 15k (+0.0043, +0.0136, +0.0028; mean **+0.0069**).
+- **Decisive Seed 43 Inversion**: Won Seed 43 by **+0.250 dB PSNR** and **+0.0136 SSIM** across all checkpoints.
+- **Early Trajectory Win**: Mean gain at step 1k was **+0.549 dB PSNR** and at step 3k was **+0.564 dB PSNR**.
+- **Build Speedup**: Decoupled `lfs_py` via `LFS_FAST_DEV_BUILD=ON`, reducing rebuild time from 16 minutes to **20 seconds**.
+
+Next exact read-only command: `Get-Content docs/research/kgs-scale-prior-study.md`. No pending GPU job. Branch is clean and push-synchronized with remote.
 
 ## Data and interruption safety
 Valid staging only: `test-1-2-v3` outdoor 112 train / 16 eval; `sparse-cubic-v3` indoor 126 / 18. Same parent `results/research_hillclimb/staging`. v2 INVALID and unused. Whole captures held out, adjacent captures excluded. Images are hardlinks: never edit staged files.
