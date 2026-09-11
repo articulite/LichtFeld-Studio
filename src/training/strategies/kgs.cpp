@@ -1367,8 +1367,8 @@ namespace lfs::training {
                 const auto vis_acc = visibility_accumulator();
                 if (vis_acc.is_valid() && vis_acc.numel() == n) {
                     constexpr float kUnobservedAlphaLogit = -2.944438979f; // logit(0.05)
-                    auto dead_occluded_mask = (vis_acc == 0.0f) & (raw_opacities < kUnobservedAlphaLogit);
-                    prune_mask = prune_mask | dead_occluded_mask;
+                    auto dead_occluded_mask = (vis_acc == 0.0f) && (raw_opacities < kUnobservedAlphaLogit);
+                    prune_mask = prune_mask || dead_occluded_mask;
                 }
             }
         }
