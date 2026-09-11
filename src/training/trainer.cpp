@@ -423,7 +423,7 @@ namespace lfs::training {
             return result;
         }
 
-        constexpr float kDepthLossFinalScale = 0.02f;
+        constexpr float kDepthLossFinalScale = 0.25f;
         constexpr float kDepthLossGradientTermWeight = 1.0f;
 
         [[nodiscard]] kernels::DepthPriorType depth_prior_from_mode(const std::string_view mode) {

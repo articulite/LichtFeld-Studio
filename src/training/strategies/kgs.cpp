@@ -1333,21 +1333,22 @@ namespace lfs::training {
         auto scale_max = log_scales.max(1);
 
         // KGS Dynamic Floater Recycling:
-        // In early growth, maintain conservative threshold (logit(1/255) = -5.54) so developing structure
-        // is not prematurely culled.
-        // When approaching or at max_cap (current_active >= 0.85 * cap), smoothly raise the opacity pruning
-        // threshold up to 0.05 (logit -2.94) to continuously cycle out transparent floaters and free slots
-        // for splitting high-gradient primitives in under-resolved regions.
-        float raw_opacity_prune_threshold = MRNF_RAW_OPACITY_PRUNE_THRESHOLD;
+        // In early growth (iter < 1,000), maintain conservative threshold (logit(1/255) = -5.54)
+        // so developing structure is not prematurely culled.
+        // As training progresses, smoothly ramp the baseline threshold up to 0.04 (logit -3.18) by step 10,000,
+        // and when approaching max_cap, raise it to 0.06 to aggressively cycle out transparent debris.
+        const float iter_progress = std::clamp(static_cast<float>(iter - 1000) / 9000.0f, 0.0f, 1.0f);
+        const float base_alpha = 0.00392157f + iter_progress * (0.04f - 0.00392157f);
+        float min_alpha = base_alpha;
         if (_params && _params->max_cap > 0 && n > 0) {
             const float cap_f = static_cast<float>(_params->max_cap);
             const float active_f = static_cast<float>(active_count());
-            if (active_f >= cap_f * 0.85f) {
-                const float pressure = std::clamp((active_f - cap_f * 0.85f) / (cap_f * 0.15f), 0.0f, 1.0f);
-                const float min_alpha = 0.00392157f + pressure * (0.05f - 0.00392157f);
-                raw_opacity_prune_threshold = logit_clamped(min_alpha);
+            if (active_f >= cap_f * 0.75f) {
+                const float pressure = std::clamp((active_f - cap_f * 0.75f) / (cap_f * 0.25f), 0.0f, 1.0f);
+                min_alpha = std::max(min_alpha, base_alpha + pressure * (0.06f - base_alpha));
             }
         }
+        const float raw_opacity_prune_threshold = logit_clamped(min_alpha);
 
         // Normal regularization intentionally flattens one axis. A thin
         // surface still has useful extent; prune only if every axis collapses.
