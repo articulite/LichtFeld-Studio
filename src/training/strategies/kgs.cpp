@@ -1336,7 +1336,7 @@ namespace lfs::training {
         // In early growth, maintain conservative threshold (logit(1/255) = -5.54) so developing structure
         // is not prematurely culled.
         // When approaching or at max_cap (current_active >= 0.85 * cap), smoothly raise the opacity pruning
-        // threshold up to 0.02 (logit -3.89) to continuously cycle out transparent floaters and free slots
+        // threshold up to 0.05 (logit -2.94) to continuously cycle out transparent floaters and free slots
         // for splitting high-gradient primitives in under-resolved regions.
         float raw_opacity_prune_threshold = MRNF_RAW_OPACITY_PRUNE_THRESHOLD;
         if (_params && _params->max_cap > 0 && n > 0) {
@@ -1344,7 +1344,7 @@ namespace lfs::training {
             const float active_f = static_cast<float>(active_count());
             if (active_f >= cap_f * 0.85f) {
                 const float pressure = std::clamp((active_f - cap_f * 0.85f) / (cap_f * 0.15f), 0.0f, 1.0f);
-                const float min_alpha = 0.00392157f + pressure * (0.02f - 0.00392157f);
+                const float min_alpha = 0.00392157f + pressure * (0.05f - 0.00392157f);
                 raw_opacity_prune_threshold = logit_clamped(min_alpha);
             }
         }

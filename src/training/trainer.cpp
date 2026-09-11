@@ -1867,6 +1867,11 @@ namespace lfs::training {
             (opt_params.use_normal_loss && opt_params.normal_loss_weight > 0.0f) ||
             opt_params.normal_consistency_weight > 0.0f;
 
+        const bool depth_terms_on =
+            opt_params.use_depth_loss && opt_params.depth_loss_weight > 0.0f;
+
+        const bool aux_terms_on = normal_terms_on || depth_terms_on;
+
         // Fused mask preprocess: SegmentAndIgnore band remap + optional ROI → one kernel.
         // Steady state is allocation-free via mask_preprocess_workspace_ (grow-only).
         const Tensor photometric_weight = losses::fuse_photometric_mask_weight(
@@ -1874,7 +1879,7 @@ namespace lfs::training {
             user_masks_photometric ? mask_2d : Tensor{},
             roi_weight,
             mode == param::MaskMode::SegmentAndIgnore,
-            user_masks_photometric && normal_terms_on);
+            user_masks_photometric && aux_terms_on);
 
         Tensor loss, grad_corrected, grad_raw, grad_alpha;
         const bool use_decoupled_appearance_loss =
@@ -1966,7 +1971,7 @@ namespace lfs::training {
             .grad_corrected = grad_corrected,
             .grad_raw = grad_raw,
             .grad_alpha = grad_alpha,
-            .normal_pixel_weight = user_masks_photometric && normal_terms_on ? photometric_weight : Tensor{}};
+            .normal_pixel_weight = user_masks_photometric && aux_terms_on ? photometric_weight : Tensor{}};
     }
 
     // Returns GPU tensor for loss - NO SYNC!
@@ -7114,7 +7119,7 @@ namespace lfs::training {
                                         const int depth_height = static_cast<int>(rendered_depth.shape()[0]);
                                         const float depth_prior_qstep = cam->depth_prior_quantization_step();
                                         const float* const depth_pixel_weight =
-                                            roi_weight_ptr_on_stream(depth_stream);
+                                            normal_weight_ptr_on_stream(depth_stream);
                                         lfs::core::pin_operands({&rendered_depth, &rendered_alpha, &target_depth});
                                         lfs::training::kernels::launch_depth_loss(
                                             rendered_depth.ptr<float>(),
