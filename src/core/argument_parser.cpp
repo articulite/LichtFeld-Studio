@@ -2105,6 +2105,7 @@ namespace {
                 {"auto", param::InferenceBackend::Native},
                 {"native", param::InferenceBackend::Native}});
         ::args::ValueFlag<int> max_side(parser, "pixels", "Inference longest side, rounded to /14 (default: 518; 0 disables resize)", {"max-side"});
+        ::args::ValueFlag<int> output_max_side(parser, "pixels", "Output PNG longest side (default: 0 = match original image size)", {"output-max-side"});
         ::args::ValueFlag<std::int64_t> num_tokens(parser, "tokens", "MoGe dynamic-token input when present (default: 1800)", {"num-tokens"});
         ::args::ValueFlag<int> threads(parser, "count", "Host worker threads for image load/encode (default: all available cores)", {"threads"});
         ::args::ValueFlag<int> png_compression(parser, "level", "PNG compression level 0-9 (default: 1; 0 is fastest/largest)", {"png-compression"});
@@ -2145,6 +2146,9 @@ namespace {
         if (max_side) {
             params.max_side = ::args::get(max_side);
         }
+        if (output_max_side) {
+            params.output_max_side = ::args::get(output_max_side);
+        }
         if (num_tokens) {
             params.num_tokens = ::args::get(num_tokens);
         }
@@ -2174,6 +2178,9 @@ namespace {
         }
         if (params.max_side < 0) {
             return std::unexpected("--max-side must be 0 or greater");
+        }
+        if (params.output_max_side < 0) {
+            return std::unexpected("--output-max-side must be 0 or greater");
         }
         if (params.num_tokens <= 0) {
             return std::unexpected("--num-tokens must be greater than 0");

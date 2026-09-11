@@ -1078,6 +1078,8 @@ namespace {
         std::cout << "Images: " << plan.images.size() << " under " << path_to_string(plan.images_dir) << "\n";
         std::cout << "Threads: " << resolve_thread_count(params.threads) << "\n";
         std::cout << "PNG compression: " << params.png_compression << "\n";
+        if (params.output_max_side > 0)
+            std::cout << "Output max side: " << params.output_max_side << "\n";
         std::cout << "Inference backend: " << backend_name(params.inference_backend) << "\n";
     }
 
@@ -1153,11 +1155,20 @@ namespace {
                 writes.pop_front();
             }
 
+            int out_w = loaded.original.width;
+            int out_h = loaded.original.height;
+            if (params.output_max_side > 0 && std::max(out_w, out_h) > params.output_max_side) {
+                const float scale = static_cast<float>(params.output_max_side) /
+                                    static_cast<float>(std::max(out_w, out_h));
+                out_w = std::max(1, static_cast<int>(std::round(out_w * scale)));
+                out_h = std::max(1, static_cast<int>(std::round(out_h * scale)));
+            }
+
             write_slots.acquire();
             writes.push_back(std::async(
                 std::launch::async,
                 [&job, &params, &write_slots, outputs,
-                 width = loaded.original.width, height = loaded.original.height] {
+                 width = out_w, height = out_h] {
                     struct SlotRelease {
                         std::counting_semaphore<kMaxPendingWrites>& slots;
                         ~SlotRelease() { slots.release(); }

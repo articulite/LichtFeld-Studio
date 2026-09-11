@@ -577,6 +577,7 @@ namespace lfs::core {
             PreprocessOutputMode mode = PreprocessOutputMode::Both;
             InferenceBackend inference_backend = InferenceBackend::Native;
             int max_side = 518;
+            int output_max_side = 0;
             std::int64_t num_tokens = 1800;
             int threads = 0;
             int png_compression = 1;
