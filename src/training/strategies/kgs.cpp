@@ -2093,9 +2093,14 @@ namespace lfs::training {
 
             // Required growth per window to track the target budget:
             const long long target_per_window = (remaining + windows_left - 1) / windows_left;
-            // Bound per-window growth to at most 15% of cap or 80,000 splats for optimizer stability:
-            const long long max_window_growth = std::max<long long>(
-                5000, std::min<long long>(80000, static_cast<long long>(cap * 0.15f)));
+            // Proportional geometric growth cap:
+            // Bound per-window growth to at most 12% of current active splats (and at most 10% of cap).
+            // This guarantees densification never shocks or destabilizes the scene when the model is small,
+            // while smoothly accelerating toward target budget as density expands.
+            const long long max_proportional_growth = std::max<long long>(
+                500, static_cast<long long>(static_cast<double>(current_active) * 0.12));
+            const long long max_window_growth = std::min<long long>(
+                max_proportional_growth, static_cast<long long>(cap * 0.10f));
             const int paced_target = static_cast<int>(std::min(target_per_window, max_window_growth));
 
             if (desired_total < paced_target && paced_target > 0) {

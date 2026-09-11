@@ -140,19 +140,15 @@ namespace lfs::training::kernels {
         unsigned int longest_idx = scale_idxs.x;
         float offset_magnitude = expf(scale[longest_idx]) * 0.5f;
 
-        // New scale,
+        // New scale: halve the longest axis, preserve cross-axis dimensions
         float new_scale[3];
         new_scale[longest_idx] = scale[longest_idx] + logf(0.5f);
-        new_scale[scale_idxs.y] = scale[scale_idxs.y] + logf(0.85);
-        new_scale[scale_idxs.z] = scale[scale_idxs.z] + logf(0.85);
+        new_scale[scale_idxs.y] = scale[scale_idxs.y];
+        new_scale[scale_idxs.z] = scale[scale_idxs.z];
 
-        // Adjust opacity according to energy-conserving alpha compositing:
-        // (1 - alpha_parent) = (1 - alpha_child)^2  =>  alpha_child = 1 - sqrt(1 - alpha_parent)
-        // Conserves total optical transmittance across the split without dropping surface opacity.
-        float sig = sigmoid(opacity);
-        float sig_clamped = fmaxf(1e-7f, fminf(1.0f - 1e-7f, sig));
-        float child_sig = 1.0f - sqrtf(fmaxf(0.0f, 1.0f - sig_clamped));
-        float new_opacity = inverse_sigmoid(child_sig);
+        // Opacity invariance: child splats tessellate the surface side-by-side.
+        // Slashing opacity across spatial subdivision turns opaque surfaces transparent.
+        float new_opacity = opacity;
 
         // Compute offset for first split (copy 0)
         // Directly in global coordinates
