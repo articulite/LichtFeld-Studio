@@ -40,6 +40,7 @@
 #include "io/project_recovery.hpp"
 #include "io/scene_chapter_adapter.hpp"
 #include "kernels/densification_kernels.hpp"
+#include "kernels/depth_bilateral.hpp"
 #include "kernels/image_kernels.hpp"
 #include "lfs/kernels/ssim.cuh"
 #include "lfs/training/joint_adam_codec.hpp"
@@ -6800,6 +6801,27 @@ namespace lfs::training {
                              iter >= opt.exposure_correction_grid_start_iter);
 
                         lfs::core::Tensor corrected_image = output.image;
+                        if (opt.use_depth_bilateral && output.image.is_valid() && output.depth.is_valid()) {
+                            nvtxRangePush("depth_bilateral_forward");
+                            const auto& shape = output.image.shape();
+                            if (shape.rank() >= 3) {
+                                const int h = static_cast<int>(shape[1]);
+                                const int w = static_cast<int>(shape[2]);
+                                auto filtered = lfs::core::Tensor::empty_like(output.image);
+                                depth_bilateral_weights_ = lfs::core::Tensor::empty({static_cast<size_t>(h), static_cast<size_t>(w)}, lfs::core::Device::CUDA);
+                                lfs::training::kernels::launch_depth_bilateral_forward(
+                                    output.image.ptr<float>(),
+                                    output.depth.ptr<float>(),
+                                    filtered.ptr<float>(),
+                                    depth_bilateral_weights_.ptr<float>(),
+                                    w, h,
+                                    opt.depth_bilateral_radius,
+                                    opt.depth_bilateral_sigma_s,
+                                    opt.depth_bilateral_sigma_d);
+                                corrected_image = std::move(filtered);
+                            }
+                            nvtxRangePop();
+                        }
                         lfs::core::Tensor ppisp_input;
                         lfs::core::Tensor grid_input;
                         if (exposure_correction) {
@@ -7608,6 +7630,27 @@ namespace lfs::training {
 
                         if (tile_grad_raw.is_valid() && tile_grad_raw.numel() > 0) {
                             raster_grad = raster_grad + tile_grad_raw;
+                        }
+
+                        if (opt.use_depth_bilateral && depth_bilateral_weights_.is_valid() && output.depth.is_valid()) {
+                            nvtxRangePush("depth_bilateral_backward");
+                            const auto& shape = raster_grad.shape();
+                            if (shape.rank() >= 3) {
+                                const int h = static_cast<int>(shape[1]);
+                                const int w = static_cast<int>(shape[2]);
+                                auto grad_raw = lfs::core::Tensor::empty_like(raster_grad);
+                                lfs::training::kernels::launch_depth_bilateral_backward(
+                                    raster_grad.ptr<float>(),
+                                    output.depth.ptr<float>(),
+                                    depth_bilateral_weights_.ptr<float>(),
+                                    grad_raw.ptr<float>(),
+                                    w, h,
+                                    opt.depth_bilateral_radius,
+                                    opt.depth_bilateral_sigma_s,
+                                    opt.depth_bilateral_sigma_d);
+                                raster_grad = std::move(grad_raw);
+                            }
+                            nvtxRangePop();
                         }
 
                         current_phase = StepPhase::Backward;

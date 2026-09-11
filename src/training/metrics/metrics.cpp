@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later */
 
 #include "metrics.hpp"
+#include "../kernels/depth_bilateral.hpp"
 #include "../kernels/normal_loss.hpp"
 #include "../rasterization/fast_rasterizer.hpp"
 #include "../rasterization/gsplat_rasterizer.hpp"
@@ -778,6 +779,24 @@ namespace lfs::training {
                                         : lfs::core::Tensor{};
             if (appearance_ && r_output.image.is_valid()) {
                 r_output.image = appearance_(r_output.image, *cam);
+            }
+            if (_params.optimization.use_depth_bilateral && r_output.image.is_valid() && r_output.depth.is_valid()) {
+                const auto& shape = r_output.image.shape();
+                if (shape.rank() >= 3) {
+                    const int h = static_cast<int>(shape[1]);
+                    const int w = static_cast<int>(shape[2]);
+                    auto filtered = lfs::core::Tensor::empty_like(r_output.image);
+                    lfs::training::kernels::launch_depth_bilateral_forward(
+                        r_output.image.ptr<float>(),
+                        r_output.depth.ptr<float>(),
+                        filtered.ptr<float>(),
+                        nullptr,
+                        w, h,
+                        _params.optimization.depth_bilateral_radius,
+                        _params.optimization.depth_bilateral_sigma_s,
+                        _params.optimization.depth_bilateral_sigma_d);
+                    r_output.image = std::move(filtered);
+                }
             }
             r_output.image = image_for_metrics_and_save(r_output.image);
 

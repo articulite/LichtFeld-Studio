@@ -425,6 +425,31 @@ namespace lfs::core::param {
             .precision(1)
             .ui_step(0.5)
 
+            // Depth-aware bilateral filter (Splat3 anti-bleeding)
+            .all_strategies()
+            .bool_prop(&OptimizationParameters::use_depth_bilateral,
+                       "use_depth_bilateral", "Depth Bilateral", d.use_depth_bilateral,
+                       "Enable screen-space depth-aware bilateral anti-bleeding filter")
+            .locale("training_params.depth_bilateral")
+            .all_strategies()
+            .float_prop(&OptimizationParameters::depth_bilateral_sigma_s,
+                        "depth_bilateral_sigma_s", "Depth Bilateral Sigma S", d.depth_bilateral_sigma_s, 0.1f, 10.0f,
+                        "Spatial Gaussian blur sigma for depth bilateral filter")
+            .precision(2)
+            .ui_step(0.1)
+            .all_strategies()
+            .float_prop(&OptimizationParameters::depth_bilateral_sigma_d,
+                        "depth_bilateral_sigma_d", "Depth Bilateral Sigma D", d.depth_bilateral_sigma_d, 0.001f, 1.0f,
+                        "Relative depth difference sigma for depth bilateral edge stopping")
+            .precision(3)
+            .ui_step(0.01)
+            .all_strategies()
+            .int_prop(&OptimizationParameters::depth_bilateral_radius,
+                      "depth_bilateral_radius", "Depth Bilateral Radius", d.depth_bilateral_radius, 1, 5,
+                      "Filter neighborhood radius (1 = 3x3, 2 = 5x5)")
+            .precision(0)
+            .ui_step(1)
+
             // Strategy
             .all_strategies()
             .string_prop(&OptimizationParameters::strategy,

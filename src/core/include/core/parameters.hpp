@@ -232,6 +232,12 @@ namespace lfs::core {
             float bilateral_grid_lr = 2e-3f;
             float tv_loss_weight = 10.f;
 
+            // Depth-aware bilateral filter parameters (Splat3 anti-bleeding)
+            bool use_depth_bilateral = false;
+            float depth_bilateral_sigma_s = 1.2f;
+            float depth_bilateral_sigma_d = 0.05f;
+            int depth_bilateral_radius = 1;
+
             // Combined per-photo exposure + residual grid (replaces standalone grid/PPISP)
             bool use_exposure_correction = false;
             int exposure_correction_grid_start_iter = 1000;

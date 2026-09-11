@@ -754,6 +754,9 @@ namespace lfs::training {
         // Bilateral grid for appearance modeling (optional)
         std::unique_ptr<BilateralGrid> bilateral_grid_;
 
+        // Screen-space depth bilateral filter state (optional)
+        lfs::core::Tensor depth_bilateral_weights_;
+
         // PPISP for physically-plausible ISP appearance modeling (optional)
         std::unique_ptr<PPISP> ppisp_;
         // Train-set EXIF EV mean used by seed_exposure (0.5 * (ev - mean)). Unset

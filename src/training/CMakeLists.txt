@@ -31,6 +31,7 @@ set(LFS_TRAINING_KERNEL_SOURCES
     kernels/normal_consistency_loss.cu
     kernels/roi_weight_map.cu
     kernels/image_kernels.cu
+    kernels/depth_bilateral.cu
     kernels/mask_preprocess.cu
     components/sparsity_optimizer_kernels.cu
 )
