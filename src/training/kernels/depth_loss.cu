@@ -423,7 +423,7 @@ namespace lfs::training::kernels {
                     const float dp_de = -c.p * c.p;
                     const float g = weight * inv_norm * gp * dp_de;
                     grad_depth[idx] = g / c.alpha;
-                    grad_alpha[idx] = -g * c.e / c.alpha;
+                    grad_alpha[idx] = 0.0f;
                 } else {
                     grad_depth[idx] = 0.0f;
                     grad_alpha[idx] = 0.0f;
