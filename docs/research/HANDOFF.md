@@ -129,7 +129,23 @@ Key Outcomes:
 - **Protocol Enhancements**: Documented Failure Dissection Rule, Multi-Scale Trajectory Profiling, and Invariant Telemetry in `scripts/research_hillclimb/README.md`.
 - **Build Verification**: Clean rebuild of `LichtFeld-Studio.exe` and `lfs_py.pyd` verified with exit code 0 and all unit tests passing.
 
-Next exact read-only command: `Get-Content docs/research/kgs-strategy-study.md`. No pending GPU job. Branch is clean and push-synchronized with remote.
+### 5. Outdoor 15,000-Iteration Campaign (KGS Adam Momentum Reset on Recycled Slots):
+Seeds 42/43/44, baseline `--strategy mrnf` vs candidate `--strategy kgs` with 7 checkpoints: 1000, 3000, 5000, 7000, 10000, 12500, 15000. Counterbalanced execution order: Warmup (1k), B42, C42, C43, B43, B44, C44.
+- Warmup (1000 iters, seed 42): `20260911T001617Z-4f6b0796`
+- B42: `20260911T001631Z-2362f75a`
+- C42: `20260911T001732Z-0ff02b5e`
+- C43: `20260911T001834Z-d08d7f2b`
+- B43: `20260911T001938Z-1473eeff`
+- B44: `20260911T002039Z-b3a4940f`
+- C44: `20260911T002139Z-cc7aa134`
+Local runner/results: `results/research_hillclimb/kgs-adam-reset-15k-study/`.
+Key Outcomes:
+- **Unanimous SSIM Dominance**: Candidate won SSIM across ALL 3 seeds at final 15k (+0.0068, +0.0007, +0.0095; mean **+0.0057**).
+- **Mean Final Quality Gain**: Mean final delta of **+0.138 dB PSNR**, with Seed 42 showing **+0.487 dB PSNR** gain and Seed 44 showing **+0.112 dB PSNR** gain.
+- **Mid-Trajectory Dominance at Step 5,000**: Decisive win across ALL 3 seeds (mean **+0.493 dB PSNR**, **+0.0026 SSIM**).
+- **Resource Discipline**: Peak CUDA bytes 1564 MB vs 1574 MB (lower memory); elapsed ratio 1.031x (within 15% budget).
+
+Next exact read-only command: `Get-Content docs/research/kgs-adam-reset-study.md`. No pending GPU job. Branch is clean and push-synchronized with remote.
 
 ## Data and interruption safety
 Valid staging only: `test-1-2-v3` outdoor 112 train / 16 eval; `sparse-cubic-v3` indoor 126 / 18. Same parent `results/research_hillclimb/staging`. v2 INVALID and unused. Whole captures held out, adjacent captures excluded. Images are hardlinks: never edit staged files.
