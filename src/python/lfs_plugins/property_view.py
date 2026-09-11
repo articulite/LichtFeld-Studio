@@ -48,6 +48,9 @@ NUMBER_PROPS = (
     "bilateral_grid_w",
     "bilateral_grid_lr",
     "exposure_correction_grid_start_iter",
+    "depth_bilateral_radius",
+    "depth_bilateral_sigma_s",
+    "depth_bilateral_sigma_d",
     "mask_opacity_penalty_weight",
     "mask_opacity_penalty_power",
     "mask_threshold",
@@ -73,6 +76,7 @@ NUMBER_PROPS = (
 BOOL_PROPS = (
     "use_exposure_correction",
     "use_bilateral_grid",
+    "use_depth_bilateral",
     "invert_masks",
     "use_alpha_as_mask",
     "use_depth_loss",
@@ -142,6 +146,10 @@ BASIC_RUNS = (
     _run(
         "basic_bilateral_toggle",
         "use_bilateral_grid",
+    ),
+    _run(
+        "basic_depth_bilateral_toggle",
+        "use_depth_bilateral",
     ),
     _run(
         "basic_live_start",

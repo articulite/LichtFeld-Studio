@@ -1014,6 +1014,26 @@ namespace lfs::python {
                 [](PyOptimizationParams&, bool v) { modify_params([v](auto& p) { p.use_bilateral_grid = v; }); },
                 "Enable bilateral grid color correction")
             .def_prop_rw(
+                "use_depth_bilateral",
+                [](PyOptimizationParams& self) { return self.params().use_depth_bilateral; },
+                [](PyOptimizationParams&, bool v) { modify_params([v](auto& p) { p.use_depth_bilateral = v; }); },
+                "Enable screen-space depth-aware bilateral anti-bleeding filter")
+            .def_prop_rw(
+                "depth_bilateral_sigma_s",
+                [](PyOptimizationParams& self) { return self.params().depth_bilateral_sigma_s; },
+                [](PyOptimizationParams&, float v) { modify_params([v](auto& p) { p.depth_bilateral_sigma_s = v; }); },
+                "Spatial sigma for depth bilateral filter")
+            .def_prop_rw(
+                "depth_bilateral_sigma_d",
+                [](PyOptimizationParams& self) { return self.params().depth_bilateral_sigma_d; },
+                [](PyOptimizationParams&, float v) { modify_params([v](auto& p) { p.depth_bilateral_sigma_d = v; }); },
+                "Depth sigma for depth bilateral filter")
+            .def_prop_rw(
+                "depth_bilateral_radius",
+                [](PyOptimizationParams& self) { return self.params().depth_bilateral_radius; },
+                [](PyOptimizationParams&, int v) { modify_params([v](auto& p) { p.depth_bilateral_radius = v; }); },
+                "Radius in pixels for depth bilateral filter")
+            .def_prop_rw(
                 "enable_sparsity",
                 [](PyOptimizationParams& self) { return self.params().enable_sparsity; },
                 [](PyOptimizationParams&, bool v) { modify_params([v](auto& p) { p.enable_sparsity = v; }); },
