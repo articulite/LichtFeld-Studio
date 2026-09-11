@@ -8838,9 +8838,9 @@ namespace lfs::training {
                 if (params_.optimization.progressive_resolution) {
                     const int total_iters = get_total_iterations();
                     const int pyramid_boundary = std::max(1, static_cast<int>(total_iters * params_.optimization.progressive_resolution_fraction));
-                    if (iter <= pyramid_boundary / 3) {
+                    if (iter <= pyramid_boundary / 2) {
                         pyramid_downscale = 4;
-                    } else if (iter <= (2 * pyramid_boundary) / 3) {
+                    } else if (iter <= pyramid_boundary) {
                         pyramid_downscale = 2;
                     }
                     if (pyramid_downscale != current_pyramid_downscale_) {

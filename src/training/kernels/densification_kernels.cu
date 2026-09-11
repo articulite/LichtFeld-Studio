@@ -146,10 +146,13 @@ namespace lfs::training::kernels {
         new_scale[scale_idxs.y] = scale[scale_idxs.y] + logf(0.85);
         new_scale[scale_idxs.z] = scale[scale_idxs.z] + logf(0.85);
 
-        // Adjust opacity according to LAS algorithm
+        // Adjust opacity according to energy-conserving alpha compositing:
+        // (1 - alpha_parent) = (1 - alpha_child)^2  =>  alpha_child = 1 - sqrt(1 - alpha_parent)
+        // Conserves total optical transmittance across the split without dropping surface opacity.
         float sig = sigmoid(opacity);
-        float raw_sig = sig * 0.6f;
-        float new_opacity = inverse_sigmoid(raw_sig);
+        float sig_clamped = fmaxf(1e-7f, fminf(1.0f - 1e-7f, sig));
+        float child_sig = 1.0f - sqrtf(fmaxf(0.0f, 1.0f - sig_clamped));
+        float new_opacity = inverse_sigmoid(child_sig);
 
         // Compute offset for first split (copy 0)
         // Directly in global coordinates
