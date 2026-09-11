@@ -86,6 +86,10 @@ namespace lfs::core::args {
             OptimizationCliBinding{"--init-rho", "init_rho", Float},
             OptimizationCliBinding{"--prune-ratio", "prune_ratio", Float},
             OptimizationCliBinding{"--enable-mip", "mip_filter", Bool},
+            OptimizationCliBinding{"--no-mip", "mip_filter", Bool, true},
+            OptimizationCliBinding{"--progressive-resolution", "progressive_resolution", Bool},
+            OptimizationCliBinding{"--no-progressive-resolution", "progressive_resolution", Bool, true},
+            OptimizationCliBinding{"--progressive-resolution-fraction", "progressive_resolution_fraction", Float},
             OptimizationCliBinding{"--bilateral-grid", "use_bilateral_grid", Bool},
             OptimizationCliBinding{"--exposure-correction", "use_exposure_correction", Bool},
             OptimizationCliBinding{"--depth-bilateral", "use_depth_bilateral", Bool},
@@ -698,6 +702,10 @@ namespace {
             ::args::Group rendering_sep(parser, " ");
             ::args::Group rendering_group(parser, "RENDERING OPTIONS:");
             ::args::Flag enable_mip(rendering_group, "enable_mip", lfs::core::args::optimization_cli_help("--enable-mip"), {"enable-mip"});
+            ::args::Flag no_mip(rendering_group, "no_mip", lfs::core::args::optimization_cli_help("--no-mip"), {"no-mip"});
+            ::args::Flag progressive_resolution(rendering_group, "progressive_resolution", lfs::core::args::optimization_cli_help("--progressive-resolution"), {"progressive-resolution"});
+            ::args::Flag no_progressive_resolution(rendering_group, "no_progressive_resolution", lfs::core::args::optimization_cli_help("--no-progressive-resolution"), {"no-progressive-resolution"});
+            ::args::ValueFlag<float> progressive_resolution_fraction(rendering_group, "fraction", lfs::core::args::optimization_cli_help("--progressive-resolution-fraction"), {"progressive-resolution-fraction"});
             ::args::Flag use_bilateral_grid(rendering_group, "bilateral_grid", lfs::core::args::optimization_cli_help("--bilateral-grid"), {"bilateral-grid"});
             ::args::Flag use_exposure_correction(rendering_group, "exposure_correction", lfs::core::args::optimization_cli_help("--exposure-correction"), {"exposure-correction"});
             ::args::Flag use_depth_bilateral(rendering_group, "depth_bilateral", lfs::core::args::optimization_cli_help("--depth-bilateral"), {"depth-bilateral"});
@@ -1296,6 +1304,10 @@ namespace {
                                         centralize_val = cli_option_present({"--centralize"}) ? std::optional<std::string>(::args::get(centralize)) : std::optional<std::string>(),
                                         // Capture flag states
                                         enable_mip_flag = bool(enable_mip),
+                                        no_mip_flag = bool(no_mip),
+                                        progressive_resolution_flag = bool(progressive_resolution),
+                                        no_progressive_resolution_flag = bool(no_progressive_resolution),
+                                        progressive_resolution_fraction_val = cli_option_present({"--progressive-resolution-fraction"}) ? std::optional<float>(::args::get(progressive_resolution_fraction)) : std::optional<float>(),
                                         use_bilateral_grid_flag = bool(use_bilateral_grid),
                                         use_exposure_correction_flag = bool(use_exposure_correction),
                                         use_depth_bilateral_flag = bool(use_depth_bilateral),
@@ -1449,7 +1461,15 @@ namespace {
                 setVal(profile_start_val, opt.profile_start_iter);
                 setVal(profile_stop_val, opt.profile_stop_iter);
 
-                setFlag(enable_mip_flag, opt.mip_filter);
+                if (enable_mip_flag)
+                    opt.mip_filter = true;
+                if (no_mip_flag)
+                    opt.mip_filter = false;
+                if (progressive_resolution_flag)
+                    opt.progressive_resolution = true;
+                if (no_progressive_resolution_flag)
+                    opt.progressive_resolution = false;
+                setVal(progressive_resolution_fraction_val, opt.progressive_resolution_fraction);
                 setFlag(use_bilateral_grid_flag, opt.use_bilateral_grid);
                 setFlag(use_exposure_correction_flag, opt.use_exposure_correction);
                 if (use_depth_bilateral_flag)
@@ -1592,7 +1612,9 @@ namespace {
                 note_opt("perf_bench_warmup", perf_bench_warmup_val.has_value());
                 note_opt("profile_start_iter", profile_start_val.has_value());
                 note_opt("profile_stop_iter", profile_stop_val.has_value());
-                note_opt("mip_filter", enable_mip_flag);
+                note_opt("mip_filter", enable_mip_flag || no_mip_flag);
+                note_opt("progressive_resolution", progressive_resolution_flag || no_progressive_resolution_flag);
+                note_opt("progressive_resolution_fraction", progressive_resolution_fraction_val.has_value());
                 note_opt("use_bilateral_grid", use_bilateral_grid_flag);
                 note_opt("use_exposure_correction", use_exposure_correction_flag);
                 note_opt("use_depth_bilateral", use_depth_bilateral_flag || no_depth_bilateral_flag);

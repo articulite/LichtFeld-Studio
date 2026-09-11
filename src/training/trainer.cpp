@@ -8420,6 +8420,7 @@ namespace lfs::training {
         pending_snapshot_finish_reason_ =
             lfs::io::project::TrainingFinishReason::None;
         ready_to_start_ = false; // Reset the flag
+        current_pyramid_downscale_ = -1;
         lfs::training::CommandCenter::instance().set_phase(lfs::training::TrainingPhase::SafeControl);
 
         ready_to_start_ = true; // Skip GUI wait for now
@@ -8830,6 +8831,112 @@ namespace lfs::training {
                               stats.hot_path_hits,
                               stats.cold_path_misses);
                     logged_epoch2_loader_cache = true;
+                }
+
+                // Multi-scale progressive resolution pyramid schedule (Splat3-style 4x -> 2x -> 1x)
+                int pyramid_downscale = 1;
+                if (params_.optimization.progressive_resolution) {
+                    const int total_iters = get_total_iterations();
+                    const int pyramid_boundary = std::max(1, static_cast<int>(total_iters * params_.optimization.progressive_resolution_fraction));
+                    if (iter <= pyramid_boundary / 3) {
+                        pyramid_downscale = 4;
+                    } else if (iter <= (2 * pyramid_boundary) / 3) {
+                        pyramid_downscale = 2;
+                    }
+                    if (pyramid_downscale != current_pyramid_downscale_) {
+                        LOG_INFO("Multi-Scale Progressive Pyramid [iter {}/{}]: Tier {} ({}x downscale)",
+                                 iter, total_iters,
+                                 pyramid_downscale == 4 ? "1/3 [Coarse Base]" : (pyramid_downscale == 2 ? "2/3 [Structural Refinement]" : "3/3 [Full Native Resolution]"),
+                                 pyramid_downscale);
+                        current_pyramid_downscale_ = pyramid_downscale;
+                    }
+                }
+
+                const int orig_cam_w = cam ? cam->image_width() : 0;
+                const int orig_cam_h = cam ? cam->image_height() : 0;
+                auto cam_dim_guard = makeScopeGuard([cam, orig_cam_w, orig_cam_h]() {
+                    if (cam && orig_cam_w > 0 && orig_cam_h > 0) {
+                        cam->set_image_dimensions(orig_cam_w, orig_cam_h);
+                    }
+                });
+
+                if (pyramid_downscale > 1 && cam && gt_image.is_valid() && orig_cam_w > 0 && orig_cam_h > 0) {
+                    const int target_w = std::max(1, orig_cam_w / pyramid_downscale);
+                    const int target_h = std::max(1, orig_cam_h / pyramid_downscale);
+                    if (target_w != orig_cam_w || target_h != orig_cam_h) {
+                        // 1. Bilinear downsample gt_image [3, H, W]
+                        auto downsampled_img = lfs::core::Tensor::empty(
+                            {3, static_cast<size_t>(target_h), static_cast<size_t>(target_w)},
+                            lfs::core::Device::CUDA,
+                            lfs::core::DataType::Float32);
+                        downsampled_img.set_stream(training_stream_);
+                        kernels::launch_bilinear_resize_chw(
+                            gt_image.ptr<float>(),
+                            downsampled_img.ptr<float>(),
+                            3,
+                            orig_cam_h, orig_cam_w,
+                            target_h, target_w,
+                            training_stream_);
+                        gt_image = std::move(downsampled_img);
+
+                        // 2. Bilinear downsample pipelined_mask_ if valid
+                        if (pipelined_mask_.is_valid()) {
+                            const int mask_channels = (pipelined_mask_.ndim() == 3) ? static_cast<int>(pipelined_mask_.shape()[0]) : 1;
+                            std::vector<size_t> mask_shape = (pipelined_mask_.ndim() == 3)
+                                ? std::vector<size_t>{static_cast<size_t>(mask_channels), static_cast<size_t>(target_h), static_cast<size_t>(target_w)}
+                                : std::vector<size_t>{static_cast<size_t>(target_h), static_cast<size_t>(target_w)};
+                            auto downsampled_mask = lfs::core::Tensor::empty(
+                                mask_shape, lfs::core::Device::CUDA, lfs::core::DataType::Float32);
+                            downsampled_mask.set_stream(training_stream_);
+                            kernels::launch_bilinear_resize_chw(
+                                pipelined_mask_.ptr<float>(),
+                                downsampled_mask.ptr<float>(),
+                                mask_channels,
+                                orig_cam_h, orig_cam_w,
+                                target_h, target_w,
+                                training_stream_);
+                            pipelined_mask_ = std::move(downsampled_mask);
+                        }
+
+                        // 3. Bilinear downsample pipelined_depth_ if valid
+                        if (pipelined_depth_.is_valid()) {
+                            const int depth_channels = (pipelined_depth_.ndim() == 3) ? static_cast<int>(pipelined_depth_.shape()[0]) : 1;
+                            std::vector<size_t> depth_shape = (pipelined_depth_.ndim() == 3)
+                                ? std::vector<size_t>{static_cast<size_t>(depth_channels), static_cast<size_t>(target_h), static_cast<size_t>(target_w)}
+                                : std::vector<size_t>{static_cast<size_t>(target_h), static_cast<size_t>(target_w)};
+                            auto downsampled_depth = lfs::core::Tensor::empty(
+                                depth_shape, lfs::core::Device::CUDA, lfs::core::DataType::Float32);
+                            downsampled_depth.set_stream(training_stream_);
+                            kernels::launch_bilinear_resize_chw(
+                                pipelined_depth_.ptr<float>(),
+                                downsampled_depth.ptr<float>(),
+                                depth_channels,
+                                orig_cam_h, orig_cam_w,
+                                target_h, target_w,
+                                training_stream_);
+                            pipelined_depth_ = std::move(downsampled_depth);
+                        }
+
+                        // 4. Bilinear downsample pipelined_normal_ if valid
+                        if (pipelined_normal_.is_valid()) {
+                            auto downsampled_normal = lfs::core::Tensor::empty(
+                                {3, static_cast<size_t>(target_h), static_cast<size_t>(target_w)},
+                                lfs::core::Device::CUDA,
+                                lfs::core::DataType::Float32);
+                            downsampled_normal.set_stream(training_stream_);
+                            kernels::launch_bilinear_resize_chw(
+                                pipelined_normal_.ptr<float>(),
+                                downsampled_normal.ptr<float>(),
+                                3,
+                                orig_cam_h, orig_cam_w,
+                                target_h, target_w,
+                                training_stream_);
+                            pipelined_normal_ = std::move(downsampled_normal);
+                        }
+
+                        // 5. Update camera dimensions for this training step
+                        cam->set_image_dimensions(target_w, target_h);
+                    }
                 }
 
                 train_phase = StepPhase::Forward;

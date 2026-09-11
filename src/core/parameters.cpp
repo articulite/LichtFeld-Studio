@@ -708,6 +708,9 @@ namespace lfs::core {
         OptimizationParameters OptimizationParameters::kgs_defaults() {
             auto p = mrnf_defaults();
             p.strategy = std::string(kStrategyKGS);
+            p.mip_filter = true;
+            p.use_depth_bilateral = true;
+            p.progressive_resolution = true;
             return p;
         }
 

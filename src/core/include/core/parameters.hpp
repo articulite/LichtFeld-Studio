@@ -238,6 +238,10 @@ namespace lfs::core {
             float depth_bilateral_sigma_d = 0.05f;
             int depth_bilateral_radius = 1;
 
+            // Multi-scale progressive resolution pyramid (Splat3 coarse-to-fine schedule)
+            bool progressive_resolution = false;
+            float progressive_resolution_fraction = 0.12f; // Fraction of total iterations for pyramid schedule (e.g. 0-12%)
+
             // Combined per-photo exposure + residual grid (replaces standalone grid/PPISP)
             bool use_exposure_correction = false;
             int exposure_correction_grid_start_iter = 1000;

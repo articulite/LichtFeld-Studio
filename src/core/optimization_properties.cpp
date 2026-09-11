@@ -450,6 +450,26 @@ namespace lfs::core::param {
             .precision(0)
             .ui_step(1)
 
+            // Mip filter (3D covariance anti-aliasing)
+            .all_strategies()
+            .bool_prop(&OptimizationParameters::mip_filter,
+                       "mip_filter", "Mip Filter", d.mip_filter,
+                       "Enable 3D covariance anti-aliasing low-pass filter (Mip-Splatting)")
+            .locale("training_params.mip_filter")
+
+            // Progressive multi-scale resolution pyramid
+            .all_strategies()
+            .bool_prop(&OptimizationParameters::progressive_resolution,
+                       "progressive_resolution", "Progressive Resolution", d.progressive_resolution,
+                       "Enable multi-scale progressive resolution pyramid training (4x -> 2x -> 1x)")
+            .locale("training_params.progressive_resolution")
+            .all_strategies()
+            .float_prop(&OptimizationParameters::progressive_resolution_fraction,
+                        "progressive_resolution_fraction", "Progressive Resolution Fraction", d.progressive_resolution_fraction, 0.01f, 0.5f,
+                        "Fraction of total training iterations over which resolution ascends")
+            .precision(2)
+            .ui_step(0.01)
+
             // Strategy
             .all_strategies()
             .string_prop(&OptimizationParameters::strategy,

@@ -757,6 +757,9 @@ namespace lfs::training {
         // Screen-space depth bilateral filter state (optional)
         lfs::core::Tensor depth_bilateral_weights_;
 
+        // Multi-scale progressive resolution pyramid tracking
+        int current_pyramid_downscale_ = -1;
+
         // PPISP for physically-plausible ISP appearance modeling (optional)
         std::unique_ptr<PPISP> ppisp_;
         // Train-set EXIF EV mean used by seed_exposure (0.5 * (ev - mean)). Unset
