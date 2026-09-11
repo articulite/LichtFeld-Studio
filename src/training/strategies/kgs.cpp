@@ -1355,6 +1355,24 @@ namespace lfs::training {
                           compute_near_zero_rotation_mask(_splat_data->rotation_raw()) |
                           (scale_max < MRNF_LOG_MIN_SCALE_THRESHOLD);
 
+        // Splat3-Inspired Visibility & Transmittance Floater Pruning:
+        // When approaching or at target budget (active >= 0.75 * cap), recycle splats that were completely
+        // unobserved across all cameras during the refine window (vis_count == 0) and have low opacity (< 0.05).
+        // These unobserved primitives have zero visual impact and lock up budget slots that should be
+        // re-allocated to high-error regions.
+        if (_params && _params->max_cap > 0 && n > 0) {
+            const float cap_f = static_cast<float>(_params->max_cap);
+            const float active_f = static_cast<float>(active_count());
+            if (active_f >= cap_f * 0.75f) {
+                const auto vis_acc = visibility_accumulator();
+                if (vis_acc.is_valid() && vis_acc.numel() == n) {
+                    constexpr float kUnobservedAlphaLogit = -2.944438979f; // logit(0.05)
+                    auto dead_occluded_mask = (vis_acc == 0.0f) & (raw_opacities < kUnobservedAlphaLogit);
+                    prune_mask = prune_mask | dead_occluded_mask;
+                }
+            }
+        }
+
         // Bounds-dependent pruning is unsafe for one-point or colocated models:
         // log(0) would classify every finite scale as oversized. Keep the
         // bounds-independent safety checks active until a real scene extent exists.
@@ -1997,7 +2015,8 @@ namespace lfs::training {
             active_mask = _free_mask.slice(0, 0, n).logical_not();
         }
         lfs::core::Tensor trainable_mask = make_trainable_mask(*_splat_data, n, _splat_data->means().device());
-        auto refine_candidates = compute_refine_candidates();
+        const auto nyquist_mask = compute_nyquist_mask(n);
+        auto refine_candidates = compute_refine_candidates_adaptive(0, n, nyquist_mask);
         if (active_mask.is_valid()) {
             refine_candidates = refine_candidates.logical_and(active_mask);
         }
@@ -2044,12 +2063,8 @@ namespace lfs::training {
             cudaMemcpy(host_counts, _refine_counts_dev.ptr<int64_t>(),
                        4 * sizeof(int64_t), cudaMemcpyDeviceToHost),
             "KGS grow packed counts D2H");
-        // KGS Splat3-Inspired Adaptive Density Controller:
-        // 1. Rapid early ramp: When starved (current_active < min_structural_floor),
-        //    boost growth fraction up to 5x so sparse point clouds establish geometry quickly.
-        // 2. Growth phase pacing: Ensure growth is distributed smoothly throughout the active
-        //    growth window (up to effective_grow_until_iter()) so the budget is not prematurely
-        //    exhausted early in training.
+
+        // Splat3-Inspired Information-Theoretic Density & Target Budget Controller:
         const float base_grow_fraction = _params->grow_fraction;
         float effective_grow_fraction = base_grow_fraction;
 
@@ -2065,20 +2080,48 @@ namespace lfs::training {
 
         int desired_total = static_cast<int>(
             std::round(static_cast<float>(host_counts[0]) * effective_grow_fraction));
-        const int candidate_count = static_cast<int>(host_counts[0]);
+        int candidate_count = static_cast<int>(host_counts[0]);
 
-        // Pace growth toward reaching target density early (by ~40% of training),
-        // leaving the remainder of training for learning rate decay and fine parameter optimization.
-        const int target_density_iter = std::min(grow_until, std::max(1500, static_cast<int>(_params->iterations * 0.4f)));
-        if (iter < target_density_iter && cap > 0.0f && current_active >= static_cast<size_t>(min_structural_floor)) {
+        // Active Target Budget Pacing:
+        // When max_cap > 0, pace toward reaching the target budget by ~50% of total iterations.
+        const int target_density_iter = std::min(grow_until, std::max(1500, static_cast<int>(_params->iterations * 0.5f)));
+        if (iter < target_density_iter && cap > 0.0f && current_active < static_cast<size_t>(cap)) {
             const int refine_every = std::max(1, static_cast<int>(_params->refine_every));
             const int windows_left = std::max(1, (target_density_iter - iter) / refine_every);
             const long long remaining = std::max<long long>(
                 0, static_cast<long long>(cap) - static_cast<long long>(current_active));
-            // Allow generous headroom per window so growth responds directly to scene demand
-            const long long paced_max = (remaining * 3 + windows_left - 1) / windows_left;
-            if (desired_total > 0 && paced_max < desired_total) {
-                desired_total = static_cast<int>(std::max<long long>(1, paced_max));
+
+            // Required growth per window to track the target budget:
+            const long long target_per_window = (remaining + windows_left - 1) / windows_left;
+            // Bound per-window growth to at most 15% of cap or 80,000 splats for optimizer stability:
+            const long long max_window_growth = std::max<long long>(
+                5000, std::min<long long>(80000, static_cast<long long>(cap * 0.15f)));
+            const int paced_target = static_cast<int>(std::min(target_per_window, max_window_growth));
+
+            if (desired_total < paced_target && paced_target > 0) {
+                // The static threshold did not yield enough candidates to maintain the pacing schedule.
+                // Re-evaluate candidates with adaptive quantile relaxation, preserving the Nyquist floor.
+                refine_candidates = compute_refine_candidates_adaptive(paced_target, n, nyquist_mask);
+                if (active_mask.is_valid()) {
+                    refine_candidates = refine_candidates.logical_and(active_mask);
+                }
+                if (trainable_mask.is_valid()) {
+                    refine_candidates = refine_candidates.logical_and(trainable_mask);
+                }
+                // Refresh device counts for the adaptively expanded candidate set:
+                kernels::launch_packed_refine_counts(
+                    refine_candidates.ptr<bool>(), n,
+                    nullptr, 0,
+                    (replace_weights.is_valid() ? replace_weights.ptr<float>() : nullptr),
+                    (replace_weights.is_valid() ? n : 0),
+                    nullptr, 0,
+                    _refine_counts_dev.ptr<int64_t>());
+                LFS_CUDA_CHECK_MSG(
+                    cudaMemcpy(host_counts, _refine_counts_dev.ptr<int64_t>(),
+                               4 * sizeof(int64_t), cudaMemcpyDeviceToHost),
+                    "KGS grow adaptive packed counts D2H");
+                candidate_count = static_cast<int>(host_counts[0]);
+                desired_total = std::min(paced_target, candidate_count);
             }
         }
         const int selectable_replace = static_cast<int>(host_counts[2]);
@@ -2451,11 +2494,61 @@ namespace lfs::training {
         return w_view;
     }
 
-    lfs::core::Tensor KGS::compute_refine_candidates() const {
+    lfs::core::Tensor KGS::compute_nyquist_mask(const size_t n) const {
         using namespace lfs::core;
-        auto candidate_weights = apply_crop_damping_to_scores(*_optimizer, _refine_weight_max);
-        return (candidate_weights > _params->growth_grad_threshold) &&
-               (visibility_accumulator() > 0.0f);
+        // Screen-space Nyquist floor:
+        // A primitive whose maximum projected angular radius across all visible training cameras
+        // is below ~0.5 pixel equivalent (fraction ~ 0.0004f) is already at or beyond sensor resolution.
+        // Splitting it would produce sub-pixel aliasing and floaters without adding meaningful geometric detail.
+        constexpr float kNyquistScreenShareFloor = 0.0004f;
+        if (_splat_data->_max_screen_share.is_valid() &&
+            _splat_data->_max_screen_share.numel() == n) {
+            return (_splat_data->_max_screen_share > kNyquistScreenShareFloor);
+        }
+        return Tensor::ones_bool({n}, _splat_data->means().device());
+    }
+
+    lfs::core::Tensor KGS::compute_refine_candidates_adaptive(
+        const int target_growth, const size_t n, const lfs::core::Tensor& nyquist_mask) const {
+        using namespace lfs::core;
+        const auto candidate_weights = apply_crop_damping_to_scores(*_optimizer, _refine_weight_max);
+        const auto vis_acc = visibility_accumulator();
+        const auto visible_mask = (vis_acc.is_valid() && vis_acc.numel() == n)
+                                      ? (vis_acc > 0.0f)
+                                      : Tensor::ones_bool({n}, candidate_weights.device());
+
+        // Base criteria: above standard threshold, observed in views, and meets Nyquist resolution floor
+        auto candidates = (candidate_weights > _params->growth_grad_threshold) &&
+                          visible_mask &&
+                          nyquist_mask;
+
+        // If target_growth is requested and the static threshold did not yield enough candidates
+        // (common as training progresses and photometric error drops), dynamically relax the threshold
+        // down to a noise floor to satisfy the pacing budget.
+        if (target_growth > 0) {
+            const int64_t candidate_count = candidates.to(DataType::Int32).sum().item<int64_t>();
+            if (candidate_count < static_cast<int64_t>(target_growth)) {
+                // Smooth adaptive relaxation: scale threshold down proportional to candidate deficit,
+                // bounded below by 1% of standard threshold to never split numerical zero noise.
+                const float deficit_ratio = static_cast<float>(candidate_count + 1) /
+                                            static_cast<float>(target_growth + 1);
+                const float min_noise_floor = _params->growth_grad_threshold * 0.01f;
+                const float adaptive_threshold = std::max(
+                    min_noise_floor,
+                    _params->growth_grad_threshold * std::clamp(deficit_ratio, 0.01f, 1.0f));
+
+                candidates = (candidate_weights > adaptive_threshold) &&
+                             visible_mask &&
+                             nyquist_mask;
+            }
+        }
+        return candidates;
+    }
+
+    lfs::core::Tensor KGS::compute_refine_candidates() const {
+        const size_t n = static_cast<size_t>(_splat_data->size());
+        const auto nyquist = compute_nyquist_mask(n);
+        return compute_refine_candidates_adaptive(0, n, nyquist);
     }
 
     void KGS::compact_splats(const lfs::core::Tensor& keep_mask) {

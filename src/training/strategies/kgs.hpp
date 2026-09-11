@@ -162,6 +162,9 @@ namespace lfs::training {
         void grow_and_split(int iter, int pruned_count);
         [[nodiscard]] int effective_grow_until_iter() const;
         [[nodiscard]] lfs::core::Tensor compute_refine_candidates() const;
+        [[nodiscard]] lfs::core::Tensor compute_nyquist_mask(size_t n) const;
+        [[nodiscard]] lfs::core::Tensor compute_refine_candidates_adaptive(
+            int target_growth, size_t n, const lfs::core::Tensor& nyquist_mask) const;
         void apply_decay(int iter);
         void inject_noise(int iter);
         void compact_splats(const lfs::core::Tensor& keep_mask);
