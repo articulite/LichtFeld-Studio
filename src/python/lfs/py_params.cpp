@@ -1044,6 +1044,16 @@ namespace lfs::python {
                 [](PyOptimizationParams&, bool v) { modify_params([v](auto& p) { p.mip_filter = v; }); },
                 "Enable mip filtering (anti-aliasing)")
             .def_prop_rw(
+                "progressive_resolution",
+                [](PyOptimizationParams& self) { return self.params().progressive_resolution; },
+                [](PyOptimizationParams&, bool v) { modify_params([v](auto& p) { p.progressive_resolution = v; }); },
+                "Enable multi-scale progressive resolution pyramid training")
+            .def_prop_rw(
+                "progressive_resolution_fraction",
+                [](PyOptimizationParams& self) { return self.params().progressive_resolution_fraction; },
+                [](PyOptimizationParams&, float v) { modify_params([v](auto& p) { p.progressive_resolution_fraction = v; }); },
+                "Fraction of total iterations over which resolution ascends")
+            .def_prop_rw(
                 "ppisp",
                 [](PyOptimizationParams& self) { return self.params().use_ppisp; },
                 [](PyOptimizationParams&, bool v) { modify_params([v](auto& p) { p.use_ppisp = v; }); },
