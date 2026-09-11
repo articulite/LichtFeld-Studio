@@ -8882,11 +8882,15 @@ namespace lfs::training {
                         // 2. Bilinear downsample pipelined_mask_ if valid
                         if (pipelined_mask_.is_valid()) {
                             const int mask_channels = (pipelined_mask_.ndim() == 3) ? static_cast<int>(pipelined_mask_.shape()[0]) : 1;
-                            std::vector<size_t> mask_shape = (pipelined_mask_.ndim() == 3)
-                                ? std::vector<size_t>{static_cast<size_t>(mask_channels), static_cast<size_t>(target_h), static_cast<size_t>(target_w)}
-                                : std::vector<size_t>{static_cast<size_t>(target_h), static_cast<size_t>(target_w)};
-                            auto downsampled_mask = lfs::core::Tensor::empty(
-                                mask_shape, lfs::core::Device::CUDA, lfs::core::DataType::Float32);
+                            auto downsampled_mask = (pipelined_mask_.ndim() == 3)
+                                ? lfs::core::Tensor::empty(
+                                      {static_cast<size_t>(mask_channels), static_cast<size_t>(target_h), static_cast<size_t>(target_w)},
+                                      lfs::core::Device::CUDA,
+                                      lfs::core::DataType::Float32)
+                                : lfs::core::Tensor::empty(
+                                      {static_cast<size_t>(target_h), static_cast<size_t>(target_w)},
+                                      lfs::core::Device::CUDA,
+                                      lfs::core::DataType::Float32);
                             downsampled_mask.set_stream(training_stream_);
                             kernels::launch_bilinear_resize_chw(
                                 pipelined_mask_.ptr<float>(),
@@ -8901,11 +8905,15 @@ namespace lfs::training {
                         // 3. Bilinear downsample pipelined_depth_ if valid
                         if (pipelined_depth_.is_valid()) {
                             const int depth_channels = (pipelined_depth_.ndim() == 3) ? static_cast<int>(pipelined_depth_.shape()[0]) : 1;
-                            std::vector<size_t> depth_shape = (pipelined_depth_.ndim() == 3)
-                                ? std::vector<size_t>{static_cast<size_t>(depth_channels), static_cast<size_t>(target_h), static_cast<size_t>(target_w)}
-                                : std::vector<size_t>{static_cast<size_t>(target_h), static_cast<size_t>(target_w)};
-                            auto downsampled_depth = lfs::core::Tensor::empty(
-                                depth_shape, lfs::core::Device::CUDA, lfs::core::DataType::Float32);
+                            auto downsampled_depth = (pipelined_depth_.ndim() == 3)
+                                ? lfs::core::Tensor::empty(
+                                      {static_cast<size_t>(depth_channels), static_cast<size_t>(target_h), static_cast<size_t>(target_w)},
+                                      lfs::core::Device::CUDA,
+                                      lfs::core::DataType::Float32)
+                                : lfs::core::Tensor::empty(
+                                      {static_cast<size_t>(target_h), static_cast<size_t>(target_w)},
+                                      lfs::core::Device::CUDA,
+                                      lfs::core::DataType::Float32);
                             downsampled_depth.set_stream(training_stream_);
                             kernels::launch_bilinear_resize_chw(
                                 pipelined_depth_.ptr<float>(),
