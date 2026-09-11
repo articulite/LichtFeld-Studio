@@ -2199,6 +2199,17 @@ namespace lfs::training {
                 growth_weights = growth_weights * edge_guidance;
             }
 
+            // KGS Splat3-Inspired Scale-Aware Growth Prior:
+            // Prioritize splitting primitives that have both high gradient AND large spatial bounding volume.
+            // Bounded smoothly in [exp(-1), exp(+1)] ~= [0.37, 2.72] to prevent runaway scaling.
+            auto log_scales = _splat_data->scaling_raw();
+            if (log_scales.is_valid() && log_scales.ndim() == 2 &&
+                log_scales.shape()[0] == n && log_scales.shape()[1] == 3) {
+                auto scale_max = log_scales.max(1);
+                auto scale_norm = ((scale_max + 3.5f) * 0.5f).clamp(-1.0f, 1.0f);
+                growth_weights = growth_weights * scale_norm.exp();
+            }
+
             if (replace_mask.is_valid()) {
                 // Keep replacement and growth disjoint on device instead of
                 // deduplicating sampled indices on the host.

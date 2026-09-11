@@ -699,7 +699,10 @@ endif()
 
 # The app embeds Python and loads the nanobind module at runtime for panels,
 # menus, and operators. Keep the runtime artifact in lockstep with the app.
-add_dependencies(${PROJECT_NAME} lfs_py)
+option(LFS_FAST_DEV_BUILD "Skip lfs_py dependency on LichtFeld-Studio executable for fast C++ iterations" OFF)
+if(NOT LFS_FAST_DEV_BUILD)
+    add_dependencies(${PROJECT_NAME} lfs_py)
+endif()
 
 # Copy nvImageCodec shared libraries next to executable for easy deployment
 if(TARGET nvimgcodec)
