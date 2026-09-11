@@ -2941,9 +2941,18 @@ namespace lfs::training {
             }
         }
 
-        // Zero residual grads so the post-densify Adam step does not use
-        // previous-occupant / pre-split gradients on rewritten rows.
+        // Zero residual grads and reset Adam optimizer moments (m=0, v=0) so the post-densify
+        // Adam step does not use previous-occupant / pre-split gradients and erratic momentum
+        // on rewritten recycled rows.
         zero_adam_grads_at_indices(*_optimizer, target_indices, layout_rest);
+        if (_optimizer) {
+            reset_optimizer_state_at_indices(*_optimizer, ParamType::Means, target_indices);
+            reset_optimizer_state_at_indices(*_optimizer, ParamType::Sh0, target_indices);
+            reset_optimizer_state_at_indices(*_optimizer, ParamType::ShN, target_indices, layout_rest);
+            reset_optimizer_state_at_indices(*_optimizer, ParamType::Scaling, target_indices);
+            reset_optimizer_state_at_indices(*_optimizer, ParamType::Rotation, target_indices);
+            reset_optimizer_state_at_indices(*_optimizer, ParamType::Opacity, target_indices);
+        }
 
         set_deleted_mask_rows(*_splat_data, _free_mask, target_indices, false);
 
